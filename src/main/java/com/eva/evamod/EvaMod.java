@@ -5,9 +5,11 @@ import com.eva.evamod.registry.ModAttachments;
 import com.eva.evamod.registry.ModEntities;
 import com.eva.evamod.registry.ModItems;
 import com.eva.evamod.registry.ModStructures;
+import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import org.slf4j.Logger;
 
 /**
  * Eva Mod — biome NPCs with homes, memory, dialogue and trades.
@@ -19,6 +21,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(EvaMod.MODID)
 public class EvaMod {
     public static final String MODID = "evamod";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public EvaMod(IEventBus modEventBus, ModContainer container) {
         ModEntities.ENTITY_TYPES.register(modEventBus);

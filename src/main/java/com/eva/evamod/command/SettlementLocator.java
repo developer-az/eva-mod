@@ -93,11 +93,13 @@ public final class SettlementLocator {
                 it.remove();
                 player.sendSystemMessage(Component.literal(
                         "No new npc_house/npc_town found within " + LOCATE_CHUNK_RADIUS
-                                + " chunks. Try traveling or /evamod locate reset.")
+                                + " chunks. Travel farther, explore new biomes, then try /evamod locate again"
+                                + " — or /evamod locate reset if you already found nearby ones.")
                         .withStyle(ChatFormatting.RED));
             } else if (job.shouldAnnounceProgress()) {
                 player.sendSystemMessage(Component.literal(
-                        "Searching settlements… " + job.progressPercent() + "%")
+                        "Still searching for houses… " + job.progressPercent()
+                                + "% (safe to keep playing; you do not need cheats for this)")
                         .withStyle(ChatFormatting.GRAY));
             }
         }

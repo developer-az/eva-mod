@@ -1,9 +1,19 @@
-# Eva Mod - Biome NPCs (NeoForge 1.21.1)
+﻿# Eva Mod - Biome NPCs
 
 A Minecraft mod that scatters friendly, immortal NPCs across the world. Every major
 biome gets its own themed folk, living in small houses that generate naturally.
 
-**Targets Minecraft 26.2 + NeoForge 26.2.**
+## Download
+
+**[Download page](https://developer-az.github.io/eva-mod/)** — pick the jar that matches **your** Minecraft version.
+
+| Eva Mod | Minecraft | NeoForge | Jar |
+|---------|-----------|----------|-----|
+| **1.1.1 (Latest)** | **26.2** | NeoForge 26.2 | [evamod-1.1.1.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.1-mc26.2/evamod-1.1.1.jar) |
+| 1.1.0 | 26.2 | NeoForge 26.2 | [evamod-1.1.0.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.0-mc26.2/evamod-1.1.0.jar) |
+| 1.0.0 | 1.21.1 | NeoForge | [evamod-1.0.0.jar](https://github.com/developer-az/eva-mod/releases/download/v1.0.0/evamod-1.0.0.jar) |
+
+The 26.2 jars will not work on 1.21.1, and the 1.21.1 jar will not work on 26.2. Prefer **1.1.1** if you play Minecraft 26.2.
 
 ## Features
 

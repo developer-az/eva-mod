@@ -321,11 +321,38 @@ main,
   backdrop-filter: blur(8px);
 }
 
+.version-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  margin-bottom: 0.15rem;
+}
+
 .version-meta h3 {
-  margin: 0 0 0.15rem;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.28rem;
   font-weight: 600;
+}
+
+.badge-latest {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff8f6;
+  background: linear-gradient(135deg, var(--blush), var(--blush-deep));
+  box-shadow: 0 4px 10px rgba(232, 138, 158, 0.28);
+}
+
+.version-item--latest {
+  border-color: rgba(242, 168, 184, 0.55);
+  box-shadow: 0 8px 20px rgba(232, 138, 158, 0.1);
 }
 
 .version-note {

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Eva Mod — Biome NPCs</title>
-  <meta name="description" content="Download Eva Mod — soft biome NPCs for Minecraft NeoForge. Friendly neighbors with jobs, gifts, and cozy houses." />
+  <meta name="description" content="Download Eva Mod — soft biome NPCs for Minecraft NeoForge 26.2 and 1.21.1. Friendly neighbors with jobs, gifts, and cozy houses." />
   <meta name="theme-color" content="#B7D4C4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <link rel="stylesheet" href="styles.css?v=3" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
@@ -111,10 +111,40 @@
       </div>
 
       <ul class="version-list" id="version-list">
-        <li class="version-item reveal">
+        <li class="version-item version-item--latest reveal">
           <div class="version-meta">
-            <h3>v1.0.0</h3>
-            <p class="version-note">The first cozy release — biome NPCs, dialogue, gifts, and little houses.</p>
+            <div class="version-title">
+              <h3>v1.1.0</h3>
+              <span class="badge-latest">Latest</span>
+            </div>
+            <p class="version-note">Ported for Minecraft 26.2 — recommended for new worlds.</p>
+            <dl class="specs">
+              <div>
+                <dt>Minecraft</dt>
+                <dd>26.2</dd>
+              </div>
+              <div>
+                <dt>Loader</dt>
+                <dd>NeoForge 26.2</dd>
+              </div>
+              <div>
+                <dt>File</dt>
+                <dd>evamod-1.1.0.jar</dd>
+              </div>
+            </dl>
+          </div>
+          <a
+            class="btn btn-download"
+            href="https://github.com/developer-az/eva-mod/releases/download/v1.1.0-mc26.2/evamod-1.1.0.jar"
+            download
+          >Download jar</a>
+        </li>
+        <li class="version-item reveal reveal-delay-1">
+          <div class="version-meta">
+            <div class="version-title">
+              <h3>v1.0.0</h3>
+            </div>
+            <p class="version-note">The first cozy release for older 1.21.1 worlds.</p>
             <dl class="specs">
               <div>
                 <dt>Minecraft</dt>
@@ -149,7 +179,7 @@
           <span class="step-num">1</span>
           <div>
             <h3>Get NeoForge</h3>
-            <p>Install <a href="https://neoforged.net/" rel="noopener noreferrer">NeoForge for Minecraft 1.21.1</a>.</p>
+            <p>Install <a href="https://neoforged.net/" rel="noopener noreferrer">NeoForge</a> for the Minecraft version that matches your jar (26.2 or 1.21.1).</p>
           </div>
         </li>
         <li class="reveal reveal-delay-1">
@@ -163,7 +193,7 @@
           <span class="step-num">3</span>
           <div>
             <h3>Launch together</h3>
-            <p>Start the NeoForge 1.21.1 profile and say hi to your new neighbors.</p>
+            <p>Start the matching NeoForge profile and say hi to your new neighbors.</p>
           </div>
         </li>
       </ol>
@@ -179,6 +209,6 @@
     </p>
   </footer>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eva Mod — Biome NPCs</title>
+  <meta name="description" content="Download Eva Mod — soft biome NPCs for Minecraft NeoForge. Friendly neighbors with jobs, gifts, and cozy houses." />
+  <meta name="theme-color" content="#B7D4C4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+    <span class="dot-field"></span>
+  </div>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="brand">Eva Mod</p>
+        <h1>Biome NPCs who feel like neighbors</h1>
+        <p class="lede">Soft little friends for your shared world — jobs, gifts, memory, and cozy houses that bloom into the biomes you love.</p>
+        <div class="cta-group">
+          <a class="btn btn-primary" href="#versions">Download the mod</a>
+          <a class="btn btn-ghost" href="https://github.com/developer-az/eva-mod/releases" rel="noopener noreferrer">GitHub Releases</a>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <svg class="scene" viewBox="0 0 640 480" role="img" focusable="false">
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FDE8F0" />
+              <stop offset="55%" stop-color="#E8F5EE" />
+              <stop offset="100%" stop-color="#D7EEDF" />
+            </linearGradient>
+            <linearGradient id="hillA" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#A9CDB8" />
+              <stop offset="100%" stop-color="#8FB89E" />
+            </linearGradient>
+            <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#C7E3D2" />
+              <stop offset="100%" stop-color="#A9CDB8" />
+            </linearGradient>
+            <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#F2A8B8" />
+              <stop offset="100%" stop-color="#E88A9E" />
+            </linearGradient>
+          </defs>
+
+          <rect width="640" height="480" fill="url(#sky)" rx="0" />
+
+          <ellipse class="cloud cloud-1" cx="120" cy="86" rx="54" ry="24" fill="#fff7fb" opacity="0.9" />
+          <ellipse class="cloud cloud-1" cx="158" cy="86" rx="36" ry="18" fill="#fff7fb" opacity="0.9" />
+          <ellipse class="cloud cloud-2" cx="470" cy="70" rx="60" ry="26" fill="#fff7fb" opacity="0.85" />
+          <ellipse class="cloud cloud-2" cx="510" cy="72" rx="38" ry="18" fill="#fff7fb" opacity="0.85" />
+
+          <path d="M0 310 C90 250 170 250 260 290 C340 325 420 250 520 275 C580 292 620 300 640 305 L640 480 L0 480 Z" fill="url(#hillB)" />
+          <path d="M0 360 C120 310 220 320 320 350 C420 380 500 330 640 355 L640 480 L0 480 Z" fill="url(#hillA)" />
+
+          <!-- cozy cottage -->
+          <g class="cottage">
+            <rect x="250" y="268" width="120" height="90" rx="10" fill="#FFF6F0" />
+            <path d="M240 274 L310 214 L380 274 Z" fill="url(#roof)" />
+            <rect x="296" y="300" width="28" height="48" rx="6" fill="#D7A07A" />
+            <rect x="268" y="288" width="22" height="22" rx="5" fill="#B8D9E8" />
+            <rect x="330" y="288" width="22" height="22" rx="5" fill="#B8D9E8" />
+            <circle cx="318" cy="324" r="2.5" fill="#F7D6A8" />
+            <ellipse cx="232" cy="320" rx="14" ry="28" fill="#7BA88A" />
+            <ellipse cx="390" cy="325" rx="16" ry="30" fill="#8FB89E" />
+          </g>
+
+          <!-- soft NPC friends -->
+          <g class="npc npc-a">
+            <ellipse cx="168" cy="372" rx="22" ry="8" fill="#7BA88A" opacity="0.25" />
+            <circle cx="168" cy="330" r="22" fill="#F7C9D4" />
+            <ellipse cx="168" cy="362" rx="18" ry="22" fill="#FFE8EE" />
+            <circle cx="160" cy="328" r="2.2" fill="#5A4650" />
+            <circle cx="176" cy="328" r="2.2" fill="#5A4650" />
+            <path d="M160 338 Q168 344 176 338" stroke="#C97B8E" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M150 318 Q168 300 186 318" fill="#A9CDB8" />
+          </g>
+
+          <g class="npc npc-b">
+            <ellipse cx="470" cy="378" rx="22" ry="8" fill="#7BA88A" opacity="0.25" />
+            <circle cx="470" cy="336" r="22" fill="#C9E4F0" />
+            <ellipse cx="470" cy="368" rx="18" ry="22" fill="#EAF6FB" />
+            <circle cx="462" cy="334" r="2.2" fill="#5A4650" />
+            <circle cx="478" cy="334" r="2.2" fill="#5A4650" />
+            <path d="M462 344 Q470 350 478 344" stroke="#7AA0B4" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M452 324 Q470 306 488 324" fill="#F2A8B8" />
+          </g>
+
+          <g class="float-heart">
+            <path d="M318 168 C318 158 328 152 336 158 C344 152 354 158 354 168 C354 182 336 194 336 194 C336 194 318 182 318 168 Z" fill="#F2A8B8" opacity="0.9" />
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="versions" id="versions">
+      <div class="section-head">
+        <h2>Versions</h2>
+        <p>Every compiled release, ready to drop into your mods folder.</p>
+      </div>
+
+      <ul class="version-list" id="version-list">
+        <li class="version-item">
+          <div class="version-meta">
+            <h3>v1.0.0</h3>
+            <p class="version-note">The first cozy release — biome NPCs, dialogue, gifts, and little houses.</p>
+            <dl class="specs">
+              <div>
+                <dt>Minecraft</dt>
+                <dd>1.21.1</dd>
+              </div>
+              <div>
+                <dt>Loader</dt>
+                <dd>NeoForge</dd>
+              </div>
+              <div>
+                <dt>File</dt>
+                <dd>evamod-1.0.0.jar</dd>
+              </div>
+            </dl>
+          </div>
+          <a
+            class="btn btn-download"
+            href="https://github.com/developer-az/eva-mod/releases/download/v1.0.0/evamod-1.0.0.jar"
+            download
+          >Download jar</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="install" id="install">
+      <div class="section-head">
+        <h2>Install in three soft steps</h2>
+        <p>Perfect for a shared world night-in.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <span class="step-num">1</span>
+          <div>
+            <h3>Get NeoForge</h3>
+            <p>Install <a href="https://neoforged.net/" rel="noopener noreferrer">NeoForge for Minecraft 1.21.1</a>.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div>
+            <h3>Drop in the jar</h3>
+            <p>Move <code>evamod-*.jar</code> into your <code>.minecraft/mods</code> folder.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div>
+            <h3>Launch together</h3>
+            <p>Start the NeoForge 1.21.1 profile and say hi to your new neighbors.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-brand">Eva Mod — Biome NPCs</p>
+    <p>Made with care for cozy Minecraft nights. Releases by <a href="https://github.com/developer-az" rel="noopener noreferrer">developer-az</a>.</p>
+    <p class="footer-links">
+      <a href="https://github.com/developer-az/eva-mod" rel="noopener noreferrer">Repository</a>
+      <a href="https://github.com/developer-az/eva-mod/releases" rel="noopener noreferrer">All releases</a>
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

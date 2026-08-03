@@ -8,6 +8,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 public record TradeActionPayload(int entityId, int offerIndex) implements CustomPacketPayload {
+    /** Sent when the client closes the trade UI so the NPC can resume AI. */
+    public static final int ACTION_CLOSE = -1;
+
     public static final Type<TradeActionPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(EvaMod.MODID, "trade_action"));
 

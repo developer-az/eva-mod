@@ -31,7 +31,7 @@ public class SocializeGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (npc.level().isDarkOutside() || npc.isSleeping()) {
+        if (npc.level().isDarkOutside() || npc.isSleeping() || npc.isTrading()) {
             return false;
         }
         if (npc.level().getGameTime() < npc.nextSocializeTime) {
@@ -46,7 +46,8 @@ public class SocializeGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return friend != null && friend.isAlive() && chatTicks > 0 && !npc.level().isDarkOutside();
+        return friend != null && friend.isAlive() && chatTicks > 0
+                && !npc.level().isDarkOutside() && !npc.isTrading() && !friend.isTrading();
     }
 
     @Override
@@ -91,10 +92,12 @@ public class SocializeGoal extends Goal {
     private BiomeNpc findFriend() {
         AABB box = npc.getBoundingBox().inflate(SEARCH_RANGE);
         List<BiomeNpc> neighbors = npc.level().getEntitiesOfClass(BiomeNpc.class, box,
-                other -> other != npc && other.isAlive() && !other.isSleeping());
+                other -> other != npc && other.isAlive() && !other.isSleeping() && !other.isTrading());
         if (neighbors.isEmpty()) {
             return null;
         }
-        return neighbors.get(npc.getRandom().nextInt(neighbors.size()));
+        // Prefer a neighbor who is also free to chat; pick among a small sample (not O(n²) all-pairs).
+        int pick = npc.getRandom().nextInt(neighbors.size());
+        return neighbors.get(pick);
     }
 }

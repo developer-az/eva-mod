@@ -19,7 +19,6 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.LadderBlock;
-import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -414,8 +413,8 @@ public class BiomeHousePiece extends StructurePiece {
         BlockState cap = random.nextBoolean()
                 ? Blocks.RED_MUSHROOM_BLOCK.defaultBlockState()
                 : Blocks.BROWN_MUSHROOM_BLOCK.defaultBlockState();
-        BlockState stem = Blocks.MUSHROOM_STEM.defaultBlockState()
-                .setValue(RotatedPillarBlock.AXIS, Direction.Axis.Y);
+        // MC 26.2: mushroom_stem is not a RotatedPillarBlock — no AXIS property.
+        BlockState stem = Blocks.MUSHROOM_STEM.defaultBlockState();
         // Stem posts at corners poking out of the roof
         this.placeBlock(level, stem, ox, roofBase, oz, box);
         this.placeBlock(level, stem, ox + width - 1, roofBase, oz, box);

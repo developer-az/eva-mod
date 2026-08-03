@@ -47,6 +47,12 @@ public final class ModNetworking {
                     if (!(player.level().getEntity(payload.entityId()) instanceof BiomeNpc npc)) {
                         return;
                     }
+                    if (payload.offerIndex() == TradeActionPayload.ACTION_CLOSE) {
+                        if (npc.getTradingPlayer() == player) {
+                            npc.stopTrading();
+                        }
+                        return;
+                    }
                     npc.performCustomTrade(player, payload.offerIndex());
                 }));
     }

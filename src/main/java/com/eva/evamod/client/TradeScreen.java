@@ -149,6 +149,12 @@ public class TradeScreen extends Screen {
     }
 
     @Override
+    public void onClose() {
+        ClientPacketDistributor.sendToServer(new TradeActionPayload(entityId, TradeActionPayload.ACTION_CLOSE));
+        super.onClose();
+    }
+
+    @Override
     public boolean isPauseScreen() {
         return false;
     }

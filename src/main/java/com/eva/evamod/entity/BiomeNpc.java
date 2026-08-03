@@ -4,6 +4,7 @@ import com.eva.evamod.dialogue.DialogueManager;
 import com.eva.evamod.entity.ai.ReturnHomeGoal;
 import com.eva.evamod.entity.ai.SleepGoal;
 import com.eva.evamod.entity.ai.SocializeGoal;
+import com.eva.evamod.entity.ai.TradingFreezeGoal;
 import com.eva.evamod.entity.ai.WorkGoal;
 import com.eva.evamod.memory.NpcMemory;
 import com.eva.evamod.net.OpenDialoguePayload;
@@ -133,15 +134,16 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new PanicGoal(this, 1.3));
-        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(3, new SleepGoal(this, 0.9));
-        this.goalSelector.addGoal(4, new ReturnHomeGoal(this, 1.0));
-        this.goalSelector.addGoal(5, new SocializeGoal(this, 0.7));
-        this.goalSelector.addGoal(6, new WorkGoal(this, 0.7));
-        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.6));
-        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(1, new TradingFreezeGoal(this));
+        this.goalSelector.addGoal(2, new PanicGoal(this, 1.3));
+        this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(4, new SleepGoal(this, 0.9));
+        this.goalSelector.addGoal(5, new ReturnHomeGoal(this, 1.0));
+        this.goalSelector.addGoal(6, new SocializeGoal(this, 0.7));
+        this.goalSelector.addGoal(7, new WorkGoal(this, 0.7));
+        this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.6));
+        this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
     }
 
     public NpcVariant getVariant() {
@@ -218,7 +220,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     }
 
     public void trySay(SpeechBubbles.Kind kind, int minCooldownTicks) {
-        if (this.level().isClientSide() || this.isSleeping()) {
+        if (this.level().isClientSide() || this.isSleeping() || this.isTrading()) {
             return;
         }
         long time = this.level().getGameTime();
@@ -282,6 +284,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         this.setJob(variant.randomJob(this.random));
         this.personality = NpcPersonality.random(this.random);
         this.setCustomName(Component.literal(UsedNpcNamesData.claim(level, variant, this.random)));
+        this.setCustomNameVisible(true);
         if (!this.hasHome()) {
             this.setHomePos(this.blockPosition());
         }
@@ -309,6 +312,14 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         return false;
     }
 
+    public boolean isTrading() {
+        return this.tradingPlayer != null;
+    }
+
+    public void stopTrading() {
+        this.tradingPlayer = null;
+    }
+
     @Override
     public void aiStep() {
         super.aiStep();
@@ -319,6 +330,17 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             bubbleTicks--;
             if (bubbleTicks <= 0) {
                 this.entityData.set(DATA_BUBBLE, "");
+            }
+        }
+        if (tradingPlayer != null) {
+            if (!stillValid(tradingPlayer) || tradingPlayer.isSpectator()) {
+                stopTrading();
+            } else {
+                this.getNavigation().stop();
+                this.setDeltaMovement(this.getDeltaMovement().multiply(0.0, 1.0, 0.0));
+                this.clearRestPose();
+                this.getLookControl().setLookAt(tradingPlayer, 30.0F, 30.0F);
+                return;
             }
         }
         if (this.tickCount % 60 == 0 && this.getHealth() < this.getMaxHealth()) {

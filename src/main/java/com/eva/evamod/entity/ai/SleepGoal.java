@@ -36,6 +36,9 @@ public class SleepGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if (npc.isTrading()) {
+            return false;
+        }
         if (npc.isSleeping()) {
             return true;
         }
@@ -58,6 +61,9 @@ public class SleepGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
+        if (npc.isTrading()) {
+            return false;
+        }
         if (npc.isSleeping()) {
             if (nap) {
                 return napTicksLeft > 0;

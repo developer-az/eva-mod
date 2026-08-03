@@ -41,12 +41,12 @@ public class ReturnHomeGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return wantsToGoHome();
+        return !npc.isTrading() && wantsToGoHome();
     }
 
     @Override
     public boolean canContinueToUse() {
-        return wantsToGoHome() && !npc.getNavigation().isDone();
+        return !npc.isTrading() && wantsToGoHome() && !npc.getNavigation().isDone();
     }
 
     @Override

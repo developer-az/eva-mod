@@ -2,6 +2,7 @@ package com.eva.evamod.registry;
 
 import com.eva.evamod.EvaMod;
 import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.world.SettlementCache;
 import com.eva.evamod.world.UsedNpcNamesData;
 import java.util.function.Supplier;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -23,6 +24,12 @@ public final class ModAttachments {
             "used_npc_names",
             () -> AttachmentType.builder(UsedNpcNamesData::new)
                     .serialize(UsedNpcNamesData.CODEC.fieldOf("value"))
+                    .build());
+
+    public static final Supplier<AttachmentType<SettlementCache>> SETTLEMENT_CACHE = ATTACHMENT_TYPES.register(
+            "settlement_cache",
+            () -> AttachmentType.builder(SettlementCache::new)
+                    .serialize(SettlementCache.CODEC.fieldOf("value"))
                     .build());
 
     private ModAttachments() {

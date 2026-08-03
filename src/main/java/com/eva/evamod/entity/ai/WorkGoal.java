@@ -31,7 +31,7 @@ public class WorkGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (!npc.hasHome() || npc.level().isDarkOutside() || npc.isSleeping()) {
+        if (!npc.hasHome() || npc.level().isDarkOutside() || npc.isSleeping() || npc.isTrading()) {
             return false;
         }
         if (npc.level().isRaining() && npc.level().canSeeSky(npc.blockPosition())) {
@@ -46,7 +46,8 @@ public class WorkGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return workTicks > 0 && !npc.level().isDarkOutside() && !npc.level().isRaining() && workPos != null;
+        return workTicks > 0 && !npc.level().isDarkOutside() && !npc.level().isRaining()
+                && workPos != null && !npc.isTrading();
     }
 
     @Override

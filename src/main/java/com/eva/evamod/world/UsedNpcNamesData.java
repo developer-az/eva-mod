@@ -49,10 +49,13 @@ public class UsedNpcNamesData {
         if (serverLevel == null) {
             return NpcNames.pick(variant, random);
         }
-        UsedNpcNamesData data = serverLevel.getData(ModAttachments.USED_NPC_NAMES);
-        String name = data.claimUnique(variant, random);
-        serverLevel.setData(ModAttachments.USED_NPC_NAMES, data.copy());
-        return name;
+        // Worldgen may claim names from multiple worker threads.
+        synchronized (serverLevel) {
+            UsedNpcNamesData data = serverLevel.getData(ModAttachments.USED_NPC_NAMES);
+            String name = data.claimUnique(variant, random);
+            serverLevel.setData(ModAttachments.USED_NPC_NAMES, data.copy());
+            return name;
+        }
     }
 
     private static ServerLevel resolveServerLevel(LevelAccessor level) {

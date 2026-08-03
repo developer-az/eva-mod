@@ -221,18 +221,15 @@ public class BiomeHousePiece extends StructurePiece {
         }
         placeWindow(level, box, ox + width / 2, floorY + 2, oz + depth - 1, Direction.SOUTH, random);
 
-        // Door — spawn open so pathfinding can enter; clear threshold air above path.
+        // Door — spawn open so pathfinding can enter; keep a 2-block-high clear corridor.
         int doorZ = oz + frontWall;
         BlockState doorLower = palette.door().defaultBlockState()
                 .setValue(DoorBlock.FACING, Direction.NORTH)
                 .setValue(DoorBlock.OPEN, true);
-        this.placeBlock(level, CAVE_AIR, doorX, floorY + 1, doorZ, box);
-        this.placeBlock(level, CAVE_AIR, doorX, floorY + 2, doorZ, box);
+        clearDoorCorridor(level, box, doorX, floorY, doorZ);
         this.placeBlock(level, doorLower, doorX, floorY + 1, doorZ, box);
         this.placeBlock(level, doorLower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER),
                 doorX, floorY + 2, doorZ, box);
-        // Keep the first interior cell clear of carpets/furniture for navigation.
-        this.placeBlock(level, CAVE_AIR, doorX, floorY + 1, doorZ + 1, box);
 
         // Chimney with a cozy campfire
         int chimneyX = ox + width - 2;
@@ -283,13 +280,13 @@ public class BiomeHousePiece extends StructurePiece {
         // Don't cover the bed
         this.placeBlock(level, bedFoot, ox + 1, floorY + 1, interiorBackZ, box);
         this.placeBlock(level, bedHead, ox + 2, floorY + 1, interiorBackZ, box);
-        // Re-clear doorway corridor after furniture passes
-        this.placeBlock(level, CAVE_AIR, doorX, floorY + 1, doorZ + 1, box);
+        // Re-clear doorway corridor after furniture passes (2 blocks high, in front + threshold + first step).
+        clearDoorCorridor(level, box, doorX, floorY, doorZ);
         this.placeBlock(level, doorLower, doorX, floorY + 1, doorZ, box);
         this.placeBlock(level, doorLower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER),
                 doorX, floorY + 2, doorZ, box);
 
-        // Fence lantern posts by the path
+        // Fence lantern posts by the path (keep door approach clear)
         this.placeBlock(level, Blocks.OAK_FENCE.defaultBlockState(), doorX - 2, floorY, oz - 1, box);
         this.placeBlock(level, Blocks.LANTERN.defaultBlockState(), doorX - 2, floorY + 1, oz - 1, box);
         this.placeBlock(level, Blocks.OAK_FENCE.defaultBlockState(), doorX + 2, floorY, oz - 1, box);
@@ -300,8 +297,8 @@ public class BiomeHousePiece extends StructurePiece {
             placeFlowerPatch(level, box, ox - 1, floorY, oz + 1, random);
             placeFlowerPatch(level, box, ox + width, floorY, oz + 1, random);
             placeFlowerPatch(level, box, ox - 1, floorY, oz + depth - 2, random);
-            // Potted plant by the door
-            this.placeBlock(level, POTTED[random.nextInt(POTTED.length)], doorX + 1, floorY, oz + frontWall, box);
+            // Potted plant beside the path, never in the doorway column
+            this.placeBlock(level, POTTED[random.nextInt(POTTED.length)], doorX + 2, floorY, oz + frontWall - 1, box);
         }
 
         // Tiny garden fence for flower cottage / cottage / hut
@@ -310,6 +307,14 @@ public class BiomeHousePiece extends StructurePiece {
         }
 
         this.spawnNpc(level, box, ox, oz, width, depth, floorY, frontWall, job);
+    }
+
+    /** Clears a 2-tall air column in front of, at, and just inside the door for pathfinding. */
+    private void clearDoorCorridor(WorldGenLevel level, BoundingBox box, int doorX, int floorY, int doorZ) {
+        for (int dz = -1; dz <= 1; dz++) {
+            this.placeBlock(level, CAVE_AIR, doorX, floorY + 1, doorZ + dz, box);
+            this.placeBlock(level, CAVE_AIR, doorX, floorY + 2, doorZ + dz, box);
+        }
     }
 
     private void placeWindow(WorldGenLevel level, BoundingBox box, int x, int y, int z,

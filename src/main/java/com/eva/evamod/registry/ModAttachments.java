@@ -2,6 +2,7 @@ package com.eva.evamod.registry;
 
 import com.eva.evamod.EvaMod;
 import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.world.UsedNpcNamesData;
 import java.util.function.Supplier;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -16,6 +17,12 @@ public final class ModAttachments {
             () -> AttachmentType.builder(PlayerEvaData::new)
                     .serialize(PlayerEvaData.CODEC.fieldOf("value"))
                     .copyOnDeath()
+                    .build());
+
+    public static final Supplier<AttachmentType<UsedNpcNamesData>> USED_NPC_NAMES = ATTACHMENT_TYPES.register(
+            "used_npc_names",
+            () -> AttachmentType.builder(UsedNpcNamesData::new)
+                    .serialize(UsedNpcNamesData.CODEC.fieldOf("value"))
                     .build());
 
     private ModAttachments() {

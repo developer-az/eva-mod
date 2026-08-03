@@ -13,8 +13,9 @@ public class PlayerEvaData {
             BlockPos.CODEC.listOf().optionalFieldOf("located", List.of()).forGetter(d -> d.locatedSkips)
     ).apply(instance, PlayerEvaData::new));
 
-    private static final int SKIP_RADIUS_SQR = 48 * 48;
-    private static final int MAX_LOCATED = 64;
+    /** Only skip the same structure footprint — not an entire neighborhood. */
+    private static final int SKIP_RADIUS_SQR = 20 * 20;
+    private static final int MAX_LOCATED = 128;
 
     private final List<HouseIndexEntry> houses;
     private final List<BlockPos> locatedSkips;
@@ -36,12 +37,8 @@ public class PlayerEvaData {
         return locatedSkips;
     }
 
-    public boolean isKnownOrSkipped(BlockPos pos) {
-        for (HouseIndexEntry entry : houses) {
-            if (entry.homePos().distSqr(pos) <= SKIP_RADIUS_SQR) {
-                return true;
-            }
-        }
+    /** Locate skip list only — meeting NPCs must not exhaust locate. */
+    public boolean isLocateSkipped(BlockPos pos) {
         for (BlockPos skip : locatedSkips) {
             if (skip.distSqr(pos) <= SKIP_RADIUS_SQR) {
                 return true;

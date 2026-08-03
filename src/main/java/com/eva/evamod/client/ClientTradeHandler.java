@@ -7,7 +7,11 @@ public final class ClientTradeHandler {
 
     public static void handle(OpenTradePayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.gui.setScreen(new TradeScreen(payload));
+        if (minecraft.gui.screen() instanceof TradeScreen screen && screen.getEntityId() == payload.entityId()) {
+            screen.updateFrom(payload);
+        } else {
+            minecraft.gui.setScreen(new TradeScreen(payload));
+        }
     }
 
     private ClientTradeHandler() {

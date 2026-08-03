@@ -1,5 +1,6 @@
 {
   "values": [
-    "evamod:npc_house"
+    "evamod:npc_house",
+    "evamod:npc_town"
   ]
 }

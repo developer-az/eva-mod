@@ -12,6 +12,7 @@ import com.eva.evamod.player.HouseIndexEntry;
 import com.eva.evamod.player.PlayerEvaData;
 import com.eva.evamod.registry.ModAttachments;
 import com.eva.evamod.trade.NpcTrades;
+import com.eva.evamod.world.UsedNpcNamesData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +35,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -255,6 +257,23 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         }
     }
 
+    /** Stand up before pathing so crouch/sit poses never inflate door clearance checks. */
+    public void prepareToPath() {
+        if (!this.isSleeping()) {
+            this.clearRestPose();
+            this.setPose(Pose.STANDING);
+        }
+    }
+
+    @Override
+    public EntityDimensions getDefaultDimensions(Pose pose) {
+        return switch (pose) {
+            case SLEEPING -> EntityDimensions.fixed(0.2F, 0.2F).withEyeHeight(0.2F);
+            case CROUCHING, SITTING -> EntityDimensions.scalable(0.6F, 1.5F).withEyeHeight(1.27F);
+            default -> EntityDimensions.scalable(0.6F, 1.8F).withEyeHeight(1.62F);
+        };
+    }
+
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
                                         EntitySpawnReason spawnType, @Nullable SpawnGroupData spawnGroupData) {
@@ -262,7 +281,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         this.setVariant(variant);
         this.setJob(variant.randomJob(this.random));
         this.personality = NpcPersonality.random(this.random);
-        this.setCustomName(Component.literal(variant.pickName(this.random)));
+        this.setCustomName(Component.literal(UsedNpcNamesData.claim(level, variant, this.random)));
         if (!this.hasHome()) {
             this.setHomePos(this.blockPosition());
         }

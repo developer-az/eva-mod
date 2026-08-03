@@ -34,10 +34,6 @@ public enum NpcVariant {
         return jobs[random.nextInt(jobs.length)];
     }
 
-    public String pickName(RandomSource random) {
-        return NpcNames.pick(this, random);
-    }
-
     public static NpcVariant byId(int id) {
         NpcVariant[] values = values();
         return values[Math.floorMod(id, values.length)];

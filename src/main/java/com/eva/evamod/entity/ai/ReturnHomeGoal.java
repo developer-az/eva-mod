@@ -51,6 +51,7 @@ public class ReturnHomeGoal extends Goal {
 
     @Override
     public void start() {
+        npc.prepareToPath();
         moveToHome();
     }
 

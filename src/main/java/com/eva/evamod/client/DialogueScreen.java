@@ -8,14 +8,19 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
  * Soft dialogue panel. Text colors must be ARGB (full alpha) on 26.2+.
+ * Panel/text are drawn before widgets so buttons stay on top.
  */
 public class DialogueScreen extends Screen {
     private static final int PANEL_WIDTH = 280;
-    private static final int PANEL_HEIGHT = 150;
+    private static final int PANEL_HEIGHT = 158;
+    private static final int TEXT_TOP = 42;
+    private static final int TEXT_BOTTOM_PAD = 34;
+    private static final int LINE_HEIGHT = 9;
 
     private final int entityId;
     private String npcName;
@@ -55,10 +60,9 @@ public class DialogueScreen extends Screen {
                         ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, DialogueActionPayload.ACTION_TALK)))
                 .bounds(panelLeft + gap, buttonY, buttonWidth, 20).build());
 
-        this.addRenderableWidget(Button.builder(Component.literal("Trade"), button -> {
-                    ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, DialogueActionPayload.ACTION_TRADE));
-                    this.onClose();
-                })
+        // Leave the dialogue open; OpenTradePayload replaces this screen when trade data arrives.
+        this.addRenderableWidget(Button.builder(Component.literal("Trade"), button ->
+                        ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, DialogueActionPayload.ACTION_TRADE)))
                 .bounds(panelLeft + gap * 2 + buttonWidth, buttonY, buttonWidth, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("Farewell"), button -> this.onClose())
@@ -70,22 +74,53 @@ public class DialogueScreen extends Screen {
         int panelLeft = (this.width - PANEL_WIDTH) / 2;
         int panelTop = (this.height - PANEL_HEIGHT) / 2;
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-
         UiStyle.drawPanel(graphics, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT);
-
-        graphics.text(this.font, Component.literal(npcName).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
-                panelLeft + 12, panelTop + 10, ARGB.opaque(0xFFFFFF), true);
-        graphics.text(this.font, Component.literal(jobTitle).withStyle(ChatFormatting.GRAY),
-                panelLeft + 12, panelTop + 22, ARGB.opaque(0xC8C8C8), false);
 
         Component moodLabel = moodLabel();
         int moodWidth = this.font.width(moodLabel);
+        int nameMaxWidth = PANEL_WIDTH - 24 - moodWidth - 8;
+        String nameDraw = ellipsize(npcName, nameMaxWidth);
+        graphics.text(this.font, Component.literal(nameDraw).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
+                panelLeft + 12, panelTop + 10, ARGB.opaque(0xFFFFFF), true);
         graphics.text(this.font, moodLabel, panelLeft + PANEL_WIDTH - 12 - moodWidth, panelTop + 10,
                 ARGB.opaque(0xFFFFFF), false);
 
-        graphics.textWithWordWrap(this.font, Component.literal("\"" + line + "\""),
-                panelLeft + 12, panelTop + 42, PANEL_WIDTH - 24, ARGB.opaque(0xE8E8E8), false);
+        String jobDraw = ellipsize(jobTitle, PANEL_WIDTH - 24);
+        graphics.text(this.font, Component.literal(jobDraw).withStyle(ChatFormatting.GRAY),
+                panelLeft + 12, panelTop + 22, ARGB.opaque(0xC8C8C8), false);
+
+        drawWrappedLine(graphics, "\"" + line + "\"", panelLeft + 12, panelTop + TEXT_TOP,
+                PANEL_WIDTH - 24, PANEL_HEIGHT - TEXT_TOP - TEXT_BOTTOM_PAD);
+
+        // Widgets last so Talk/Trade/Farewell sit above the panel fill.
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private void drawWrappedLine(GuiGraphicsExtractor graphics, String text, int x, int y, int width, int maxHeight) {
+        int maxLines = Math.max(1, maxHeight / LINE_HEIGHT);
+        var lines = this.font.split(Component.literal(text), width);
+        int count = Math.min(maxLines, lines.size());
+        for (int i = 0; i < count; i++) {
+            FormattedCharSequence seq = lines.get(i);
+            if (i == maxLines - 1 && lines.size() > maxLines) {
+                // Approximate last-line ellipsis from the original string head.
+                String plain = this.font.plainSubstrByWidth(text, Math.max(0, width - this.font.width("...")));
+                graphics.text(this.font, Component.literal(plain + "..."),
+                        x, y + i * LINE_HEIGHT, ARGB.opaque(0xE8E8E8), false);
+            } else {
+                graphics.text(this.font, seq, x, y + i * LINE_HEIGHT, ARGB.opaque(0xE8E8E8), false);
+            }
+        }
+    }
+
+    private String ellipsize(String value, int maxWidth) {
+        if (value == null) {
+            return "";
+        }
+        if (this.font.width(value) <= maxWidth) {
+            return value;
+        }
+        return this.font.plainSubstrByWidth(value, Math.max(0, maxWidth - this.font.width("..."))) + "...";
     }
 
     private Component moodLabel() {

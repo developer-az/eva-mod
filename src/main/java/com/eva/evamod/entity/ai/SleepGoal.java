@@ -71,6 +71,7 @@ public class SleepGoal extends Goal {
     public void start() {
         this.settleTicks = 0;
         this.napTicksLeft = NAP_LENGTH;
+        npc.prepareToPath();
         if (bedPos != null) {
             npc.getNavigation().moveTo(bedPos.getX() + 0.5, bedPos.getY(), bedPos.getZ() + 0.5, speed);
         }

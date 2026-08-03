@@ -22,7 +22,7 @@ public class TradeScreen extends Screen {
     private static final int FOOTER = 32;
 
     private final int entityId;
-    private final String npcName;
+    private String npcName;
     private final List<OpenTradePayload.TradeRow> rows;
     private int selected = 0;
 
@@ -37,9 +37,19 @@ public class TradeScreen extends Screen {
         return entityId;
     }
 
+    public void updateFrom(OpenTradePayload payload) {
+        this.npcName = payload.npcName();
+        this.rows.clear();
+        this.rows.addAll(payload.rows());
+        if (selected >= rows.size()) {
+            selected = Math.max(0, rows.size() - 1);
+        }
+        this.rebuildWidgets();
+    }
+
     @Override
     protected void init() {
-        int panelHeight = HEADER + Math.max(1, rows.size()) * ROW_HEIGHT + FOOTER + 8;
+        int panelHeight = panelHeight();
         int panelLeft = (this.width - PANEL_WIDTH) / 2;
         int panelTop = (this.height - panelHeight) / 2;
         int buttonY = panelTop + panelHeight - 26;
@@ -55,11 +65,15 @@ public class TradeScreen extends Screen {
                 .bounds(panelLeft + PANEL_WIDTH - 136, buttonY, 120, 20).build());
     }
 
+    private int panelHeight() {
+        return HEADER + Math.max(1, rows.size()) * ROW_HEIGHT + FOOTER + 8;
+    }
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int panelHeight = HEADER + Math.max(1, rows.size()) * ROW_HEIGHT + FOOTER + 8;
+        int panelHeight = panelHeight();
         int panelLeft = (this.width - PANEL_WIDTH) / 2;
         int panelTop = (this.height - panelHeight) / 2;
         for (int i = 0; i < rows.size(); i++) {
@@ -75,11 +89,10 @@ public class TradeScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        int panelHeight = HEADER + Math.max(1, rows.size()) * ROW_HEIGHT + FOOTER + 8;
+        int panelHeight = panelHeight();
         int panelLeft = (this.width - PANEL_WIDTH) / 2;
         int panelTop = (this.height - panelHeight) / 2;
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         UiStyle.drawPanel(graphics, panelLeft, panelTop, PANEL_WIDTH, panelHeight);
 
         graphics.text(this.font, Component.literal(npcName).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
@@ -103,6 +116,18 @@ public class TradeScreen extends Screen {
                     panelLeft + 48, rowTop + 9, ARGB.opaque(0xFFFFFF), false);
             drawStack(graphics, row.result(), panelLeft + 64, rowTop + 5);
 
+            // Item labels help when icons are unfamiliar; keep clear of the uses counter.
+            String labelText = row.result().isEmpty() ? "" : row.result().getHoverName().getString();
+            if (!labelText.isEmpty()) {
+                int usesReserve = 52;
+                int labelMax = PANEL_WIDTH - 96 - usesReserve;
+                if (this.font.width(labelText) > labelMax) {
+                    labelText = this.font.plainSubstrByWidth(labelText, Math.max(0, labelMax - this.font.width("..."))) + "...";
+                }
+                graphics.text(this.font, Component.literal(labelText).withStyle(ChatFormatting.WHITE),
+                        panelLeft + 88, rowTop + 9, ARGB.opaque(0xE0E0E0), false);
+            }
+
             String uses = row.uses() + "/" + row.maxUses();
             boolean soldOut = row.uses() >= row.maxUses();
             Component label = Component.literal(soldOut ? "Sold out" : uses)
@@ -110,6 +135,9 @@ public class TradeScreen extends Screen {
             graphics.text(this.font, label, panelLeft + PANEL_WIDTH - 12 - this.font.width(label),
                     rowTop + 9, ARGB.opaque(0xFFFFFF), false);
         }
+
+        // Widgets last so Deal/Close sit above the panel fill.
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     private void drawStack(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y) {

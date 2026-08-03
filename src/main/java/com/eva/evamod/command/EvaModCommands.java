@@ -7,8 +7,11 @@ import com.eva.evamod.player.PlayerEvaData;
 import com.eva.evamod.registry.ModAttachments;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -22,11 +25,12 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.tags.TagKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -36,8 +40,13 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 public final class EvaModCommands {
     public static final ResourceKey<Structure> NPC_HOUSE =
             ResourceKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_house"));
-    public static final TagKey<Structure> NPC_HOUSE_TAG =
+    public static final ResourceKey<Structure> NPC_TOWN =
+            ResourceKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_town"));
+    public static final TagKey<Structure> NPC_SETTLEMENT_TAG =
             TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_house"));
+
+    private static final int LOCATE_CHUNK_RADIUS = 128;
+    private static final int PROBE_STEP_CHUNKS = 24;
 
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -70,7 +79,7 @@ public final class EvaModCommands {
     private static int help(CommandSourceStack source) {
         source.sendSuccess(() -> Component.literal("Eva Mod commands:").withStyle(ChatFormatting.GOLD), false);
         source.sendSuccess(() -> Component.literal("/evamod help — this list"), false);
-        source.sendSuccess(() -> Component.literal("/evamod locate — next nearest npc_house (skips known)"), false);
+        source.sendSuccess(() -> Component.literal("/evamod locate — next nearest house/town (skips found)"), false);
         source.sendSuccess(() -> Component.literal("/evamod locate reset — clear locate skip list"), false);
         source.sendSuccess(() -> Component.literal("/evamod near — nearby Biome NPCs"), false);
         source.sendSuccess(() -> Component.literal("/evamod houses — personal house index (met NPCs)"), false);
@@ -86,16 +95,27 @@ public final class EvaModCommands {
         }
         ServerLevel level = player.level();
         PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
-        BlockPos found = findNextHouse(level, player.blockPosition(), data);
+        LocateResult found = findNextSettlement(level, player.blockPosition(), data);
         if (found == null) {
-            source.sendFailure(Component.literal("No new npc_house found nearby. Try /evamod locate reset."));
+            source.sendFailure(Component.literal(
+                    "No new npc_house/npc_town found within " + LOCATE_CHUNK_RADIUS
+                            + " chunks. Try traveling or /evamod locate reset."));
             return 0;
         }
-        data.rememberLocated(found);
+        data.rememberLocated(found.pos());
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
-        BlockPos finalFound = found;
-        source.sendSuccess(() -> clickablePos(
-                Component.literal("Found npc_house at ").withStyle(ChatFormatting.GREEN), finalFound), false);
+        String label = found.town() ? "npc_town (hamlet)" : "npc_house";
+        int npcHint = found.town() ? countNpcsNear(level, found.pos(), 48) : countNpcsNear(level, found.pos(), 16);
+        source.sendSuccess(() -> {
+            MutableComponent msg = Component.literal("Found " + label + " at ").withStyle(ChatFormatting.GREEN);
+            msg = clickablePos(msg, found.pos());
+            if (found.town()) {
+                msg.append(Component.literal(npcHint > 0
+                        ? " — town with " + npcHint + " NPC(s) nearby"
+                        : " — multi-NPC hamlet").withStyle(ChatFormatting.GRAY));
+            }
+            return msg;
+        }, false);
         return 1;
     }
 
@@ -162,29 +182,64 @@ public final class EvaModCommands {
             return 0;
         }
         ServerLevel level = player.level();
-        BlockPos found = findAnyNearestHouse(level, player.blockPosition());
+        BlockPos found = level.findNearestMapStructure(NPC_SETTLEMENT_TAG, player.blockPosition(), 100, false);
         if (found == null) {
-            source.sendFailure(Component.literal("No npc_house found nearby."));
+            source.sendFailure(Component.literal("No npc_house/npc_town found nearby."));
             return 0;
         }
         player.teleportTo(found.getX() + 0.5, found.getY() + 1.0, found.getZ() + 0.5);
         BlockPos finalFound = found;
         source.sendSuccess(() -> clickablePos(
-                Component.literal("Visited house at ").withStyle(ChatFormatting.AQUA), finalFound), false);
+                Component.literal("Visited settlement at ").withStyle(ChatFormatting.AQUA), finalFound), false);
         return 1;
     }
 
-    private static BlockPos findNextHouse(ServerLevel level, BlockPos origin, PlayerEvaData data) {
-        Holder.Reference<Structure> structure;
+    private static LocateResult findNextSettlement(ServerLevel level, BlockPos origin, PlayerEvaData data) {
+        // Prefer accurate centers from already-generated chunks.
+        LocateResult loaded = findInLoadedChunks(level, origin, data);
+        if (loaded != null) {
+            return loaded;
+        }
+
+        // Grid of findNearest probes so skipped nearest hits don't exhaust the search.
+        Set<Long> seen = new HashSet<>();
+        LocateResult best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (int cx = -LOCATE_CHUNK_RADIUS; cx <= LOCATE_CHUNK_RADIUS; cx += PROBE_STEP_CHUNKS) {
+            for (int cz = -LOCATE_CHUNK_RADIUS; cz <= LOCATE_CHUNK_RADIUS; cz += PROBE_STEP_CHUNKS) {
+                BlockPos probe = new BlockPos(origin.getX() + (cx << 4), origin.getY(), origin.getZ() + (cz << 4));
+                BlockPos hit = level.findNearestMapStructure(NPC_SETTLEMENT_TAG, probe, PROBE_STEP_CHUNKS + 16, false);
+                if (hit == null || data.isLocateSkipped(hit)) {
+                    continue;
+                }
+                long key = BlockPos.asLong(hit.getX(), 0, hit.getZ());
+                if (!seen.add(key)) {
+                    continue;
+                }
+                LocateResult refined = refineResult(level, hit);
+                double dist = refined.pos().distSqr(origin);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = refined;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static LocateResult findInLoadedChunks(ServerLevel level, BlockPos origin, PlayerEvaData data) {
+        List<Holder.Reference<Structure>> structures = new ArrayList<>();
         try {
-            structure = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_HOUSE);
+            structures.add(level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_HOUSE));
+            structures.add(level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_TOWN));
         } catch (Exception e) {
             return null;
         }
 
-        for (int ring = 0; ring <= 48; ring++) {
-            BlockPos bestInRing = null;
-            double bestDist = Double.MAX_VALUE;
+        LocateResult best = null;
+        double bestDist = Double.MAX_VALUE;
+        int ringMax = 64;
+        for (int ring = 0; ring <= ringMax; ring++) {
             for (int dx = -ring; dx <= ring; dx++) {
                 for (int dz = -ring; dz <= ring; dz++) {
                     if (ring > 0 && Math.abs(dx) != ring && Math.abs(dz) != ring) {
@@ -195,43 +250,59 @@ public final class EvaModCommands {
                     if (!level.hasChunk(chunkX, chunkZ)) {
                         continue;
                     }
-                    var start = level.structureManager().getStructureAt(
-                            new BlockPos((chunkX << 4) + 8, origin.getY(), (chunkZ << 4) + 8), structure.value());
-                    if (start == null || !start.isValid()) {
-                        continue;
-                    }
-                    BlockPos center = start.getBoundingBox().getCenter();
-                    if (data.isKnownOrSkipped(center)) {
-                        continue;
-                    }
-                    double dist = center.distSqr(origin);
-                    if (dist < bestDist) {
-                        bestDist = dist;
-                        bestInRing = center;
+                    BlockPos sample = new BlockPos((chunkX << 4) + 8, origin.getY(), (chunkZ << 4) + 8);
+                    for (Holder.Reference<Structure> structure : structures) {
+                        StructureStart start = level.structureManager().getStructureAt(sample, structure.value());
+                        if (start == null || !start.isValid()) {
+                            continue;
+                        }
+                        BlockPos center = start.getBoundingBox().getCenter();
+                        if (data.isLocateSkipped(center)) {
+                            continue;
+                        }
+                        double dist = center.distSqr(origin);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            best = new LocateResult(center, structure.key().equals(NPC_TOWN));
+                        }
                     }
                 }
             }
-            if (bestInRing != null) {
-                return bestInRing;
-            }
-            if (ring == 8 || ring == 16 || ring == 32 || ring == 48) {
-                BlockPos nearest = level.findNearestMapStructure(NPC_HOUSE_TAG, origin, ring + 8, false);
-                if (nearest != null && !data.isKnownOrSkipped(nearest)) {
-                    return nearest;
-                }
+            if (best != null && ring >= 8) {
+                return best;
             }
         }
-        return null;
+        return best;
     }
 
-    private static BlockPos findAnyNearestHouse(ServerLevel level, BlockPos origin) {
-        Holder.Reference<Structure> structure;
+    private static LocateResult refineResult(ServerLevel level, BlockPos hit) {
         try {
-            structure = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_HOUSE);
-        } catch (Exception e) {
-            return null;
+            Holder.Reference<Structure> town =
+                    level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_TOWN);
+            StructureStart townStart = level.structureManager().getStructureAt(hit, town.value());
+            if (townStart != null && townStart.isValid()) {
+                return new LocateResult(townStart.getBoundingBox().getCenter(), true);
+            }
+            Holder.Reference<Structure> house =
+                    level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_HOUSE);
+            StructureStart houseStart = level.structureManager().getStructureAt(hit, house.value());
+            if (houseStart != null && houseStart.isValid()) {
+                return new LocateResult(houseStart.getBoundingBox().getCenter(), false);
+            }
+        } catch (Exception ignored) {
+            // Unloaded / unavailable — fall through with map position.
         }
-        return level.findNearestMapStructure(NPC_HOUSE_TAG, origin, 64, false);
+        // Heuristic: towns are larger; if several NPCs are clustered, call it a town.
+        boolean town = countNpcsNear(level, hit, 40) >= 3;
+        return new LocateResult(hit, town);
+    }
+
+    private static int countNpcsNear(ServerLevel level, BlockPos pos, int radius) {
+        if (!level.hasChunkAt(pos)) {
+            return 0;
+        }
+        AABB box = new AABB(pos).inflate(radius);
+        return level.getEntitiesOfClass(BiomeNpc.class, box, Entity::isAlive).size();
     }
 
     private static MutableComponent clickablePos(Component prefix, BlockPos pos) {
@@ -241,6 +312,9 @@ public final class EvaModCommands {
                 .withUnderlined(true)
                 .withClickEvent(new ClickEvent.SuggestCommand("/tp @s " + coords))
                 .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to suggest teleport")))));
+    }
+
+    private record LocateResult(BlockPos pos, boolean town) {
     }
 
     private EvaModCommands() {

@@ -6,6 +6,7 @@ import com.eva.evamod.entity.NpcVariant;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -41,5 +42,11 @@ public class NpcRenderer extends HumanoidMobRenderer<BiomeNpc, NpcRenderState, H
     @Override
     public Identifier getTextureLocation(NpcRenderState state) {
         return TEXTURES.get(state.variant);
+    }
+
+    @Override
+    protected void scale(NpcRenderState state, PoseStack poseStack) {
+        // Slightly shorter visual so they read as door-friendly neighbors.
+        poseStack.scale(0.94F, 0.94F, 0.94F);
     }
 }

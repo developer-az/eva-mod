@@ -20,7 +20,9 @@ public final class ModEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<BiomeNpc>> BIOME_NPC =
             ENTITY_TYPES.register("biome_npc", () -> EntityType.Builder.of(BiomeNpc::new, MobCategory.CREATURE)
-                    .sized(0.6F, 1.95F)
+                    // Player-sized hitbox (0.6x1.8) reliably clears 1-wide, 2-tall doorways.
+                    .sized(0.6F, 1.8F)
+                    .eyeHeight(1.62F)
                     .clientTrackingRange(10)
                     .build(BIOME_NPC_KEY));
 

@@ -15,7 +15,7 @@ import net.minecraft.world.phys.AABB;
  */
 public class SocializeGoal extends Goal {
     private static final int CHAT_DURATION = 100;
-    private static final double SEARCH_RANGE = 12.0;
+    private static final double SEARCH_RANGE = 22.0;
 
     private final BiomeNpc npc;
     private final double speed;

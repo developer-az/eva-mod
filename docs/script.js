@@ -1,32 +1,32 @@
 (() => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Gentle reveal when version / install sections enter the viewport
-  if (!reduceMotion && "IntersectionObserver" in window) {
-    const targets = document.querySelectorAll(".version-item, .steps li, .section-head");
-    targets.forEach((el) => {
-      el.style.opacity = "0";
-    });
+  if (reduceMotion) {
+    document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
+    return;
+  }
 
+  const reveals = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-          entry.target.style.opacity = "";
+          entry.target.classList.add("is-visible");
           observer.unobserve(entry.target);
         });
       },
-      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
     );
-
-    targets.forEach((el) => observer.observe(el));
+    reveals.forEach((el) => observer.observe(el));
+  } else {
+    reveals.forEach((el) => el.classList.add("is-visible"));
   }
 
-  // Soft press feedback on download buttons
   document.querySelectorAll(".btn-download").forEach((btn) => {
     btn.addEventListener("click", () => {
       btn.classList.add("is-pressed");
-      window.setTimeout(() => btn.classList.remove("is-pressed"), 280);
+      window.setTimeout(() => btn.classList.remove("is-pressed"), 220);
     });
   });
 })();

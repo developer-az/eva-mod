@@ -8,6 +8,7 @@ import com.eva.evamod.registry.ModAttachments;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.Comparator;
 import java.util.List;
@@ -94,23 +95,52 @@ public final class EvaModCommands {
                 .then(Commands.literal("locate")
                         .executes(ctx -> locate(ctx.getSource()))
                         .then(Commands.literal("reset").executes(ctx -> locateReset(ctx.getSource())))
-                        .then(Commands.literal("clear").executes(ctx -> locateReset(ctx.getSource()))))
-                .then(Commands.literal("find").executes(ctx -> locate(ctx.getSource())))
-                .then(Commands.literal("search").executes(ctx -> locate(ctx.getSource())))
-                .then(Commands.literal("near").executes(ctx -> near(ctx.getSource())))
-                .then(Commands.literal("nearby").executes(ctx -> near(ctx.getSource())))
-                .then(Commands.literal("npcs").executes(ctx -> near(ctx.getSource())))
-                .then(Commands.literal("houses").executes(ctx -> houses(ctx.getSource())))
-                .then(Commands.literal("house").executes(ctx -> houses(ctx.getSource())))
-                .then(Commands.literal("homes").executes(ctx -> houses(ctx.getSource())))
-                .then(Commands.literal("home").executes(ctx -> houses(ctx.getSource())))
-                .then(Commands.literal("index").executes(ctx -> houses(ctx.getSource())))
+                        .then(Commands.literal("clear").executes(ctx -> locateReset(ctx.getSource())))
+                        .then(extraArgs("locate")))
+                .then(Commands.literal("find")
+                        .executes(ctx -> locate(ctx.getSource()))
+                        .then(extraArgs("locate")))
+                .then(Commands.literal("search")
+                        .executes(ctx -> locate(ctx.getSource()))
+                        .then(extraArgs("locate")))
+                .then(Commands.literal("near")
+                        .executes(ctx -> near(ctx.getSource()))
+                        .then(extraArgs("near")))
+                .then(Commands.literal("nearby")
+                        .executes(ctx -> near(ctx.getSource()))
+                        .then(extraArgs("near")))
+                .then(Commands.literal("npcs")
+                        .executes(ctx -> near(ctx.getSource()))
+                        .then(extraArgs("near")))
+                .then(Commands.literal("houses")
+                        .executes(ctx -> houses(ctx.getSource()))
+                        .then(extraArgs("houses")))
+                .then(Commands.literal("house")
+                        .executes(ctx -> houses(ctx.getSource()))
+                        .then(extraArgs("houses")))
+                .then(Commands.literal("homes")
+                        .executes(ctx -> houses(ctx.getSource()))
+                        .then(extraArgs("houses")))
+                .then(Commands.literal("home")
+                        .executes(ctx -> houses(ctx.getSource()))
+                        .then(extraArgs("houses")))
+                .then(Commands.literal("index")
+                        .executes(ctx -> houses(ctx.getSource()))
+                        .then(extraArgs("houses")))
                 // Teleport — registered without .requires() so beginners see a clear message
                 // instead of Brigadier's "Incorrect argument for command".
-                .then(Commands.literal("visit").executes(ctx -> visit(ctx.getSource())))
-                .then(Commands.literal("tp").executes(ctx -> visit(ctx.getSource())))
-                .then(Commands.literal("teleport").executes(ctx -> visit(ctx.getSource())))
-                .then(Commands.literal("goto").executes(ctx -> visit(ctx.getSource())))
+                .then(Commands.literal("visit")
+                        .executes(ctx -> visit(ctx.getSource()))
+                        .then(extraArgs("visit")))
+                .then(Commands.literal("tp")
+                        .executes(ctx -> visit(ctx.getSource()))
+                        .then(extraArgs("visit")))
+                .then(Commands.literal("teleport")
+                        .executes(ctx -> visit(ctx.getSource()))
+                        .then(extraArgs("visit")))
+                .then(Commands.literal("goto")
+                        .executes(ctx -> visit(ctx.getSource()))
+                        .then(extraArgs("visit")))
                 // Catch typos / leftover junk ("/evamod locatee", "/evamod loc ate", etc.).
                 .then(Commands.argument("unknown", StringArgumentType.greedyString())
                         .executes(ctx -> unknownInput(
@@ -336,6 +366,31 @@ public final class EvaModCommands {
                     "Teleport failed. Try /evamod locate for coordinates, or enable cheats and retry."));
             return 0;
         }
+    }
+
+    /** Absorb trailing junk under a known command so Brigadier never shows "Incorrect argument". */
+    private static RequiredArgumentBuilder<CommandSourceStack, String> extraArgs(String canonical) {
+        return Commands.argument("extra", StringArgumentType.greedyString())
+                .executes(ctx -> {
+                    sourceTipExact(ctx.getSource(), canonical);
+                    return 0;
+                });
+    }
+
+    private static void sourceTipExact(CommandSourceStack source, String canonical) {
+        source.sendFailure(Component.literal(
+                "Almost — Eva Mod does not take extra words after the command."));
+        if ("locate".equals(canonical)) {
+            source.sendSuccess(() -> line(
+                    Component.literal("Try exactly: ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod locate", "Find next house/town"),
+                    Component.literal(" or ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod locate reset", "Clear locate skip list")), false);
+            return;
+        }
+        source.sendSuccess(() -> line(
+                Component.literal("Try exactly: ").withStyle(ChatFormatting.GRAY),
+                suggestCommand("/evamod " + canonical, "Run /evamod " + canonical)), false);
     }
 
     private static int unknownInput(CommandSourceStack source, String raw) {

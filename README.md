@@ -9,11 +9,12 @@ biome gets its own themed folk, living in small houses that generate naturally.
 
 | Eva Mod | Minecraft | NeoForge | Jar |
 |---------|-----------|----------|-----|
-| **1.1.1 (Latest)** | **26.2** | NeoForge 26.2 | [evamod-1.1.1.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.1-mc26.2/evamod-1.1.1.jar) |
+| **1.1.2 (Latest)** | **26.2** | NeoForge 26.2 | [evamod-1.1.2.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.2-mc26.2/evamod-1.1.2.jar) |
+| 1.1.1 | 26.2 | NeoForge 26.2 | [evamod-1.1.1.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.1-mc26.2/evamod-1.1.1.jar) |
 | 1.1.0 | 26.2 | NeoForge 26.2 | [evamod-1.1.0.jar](https://github.com/developer-az/eva-mod/releases/download/v1.1.0-mc26.2/evamod-1.1.0.jar) |
 | 1.0.0 | 1.21.1 | NeoForge | [evamod-1.0.0.jar](https://github.com/developer-az/eva-mod/releases/download/v1.0.0/evamod-1.0.0.jar) |
 
-The 26.2 jars will not work on 1.21.1, and the 1.21.1 jar will not work on 26.2. Prefer **1.1.1** if you play Minecraft 26.2.
+The 26.2 jars will not work on 1.21.1, and the 1.21.1 jar will not work on 26.2. Prefer **1.1.2** if you play Minecraft 26.2.
 
 ## Features
 
@@ -33,6 +34,8 @@ The 26.2 jars will not work on 1.21.1, and the 1.21.1 jar will not work on 26.2.
   that cookie", "it's been N days").
 - **Dialogue + trading UI**: right-click to chat. The Trade button opens a merchant
   screen whose offers rotate every Minecraft day, with discounts for friends.
+- **1.1.2 UI follow-up**: keeps Talk/Trade/Farewell and Deal/Close actions visible,
+  avoids early dialogue close when trading, and refreshes trade results in place.
 - **Cute procedural houses**: 8 layouts (hut, cottage, longhouse, tower, flower cottage,
   A-frame cabin, mushroom hut, stilt house) x 2 palettes per biome = 112 house styles,
   with dirt paths, shutters, flower boxes, chimneys, carpets, lantern posts and gardens.

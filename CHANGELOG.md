@@ -1,25 +1,24 @@
 # Changelog
 
+## 2.1.0 — Homestead continuity
+
+### Pre-mod / explored worlds
+- **Homestead Primer** written book given once per player on join (new or existing worlds)
+- `/evamod book` to obtain another copy without re-triggering once-logic
+- `/evamod settle` plants a **Founder's Homestead** once per overworld (bounded cottage + NPC, no chunk regen)
+- Login path is O(1): schema migrate + book flag + day-gated mail — **no structure scans**
+
+### Forward compatibility
+- `ModVersions` + player/world **schema versions**
+- `DataMigrations` on join
+- `EvaWorldData` world attachment
+- `EvaContent` extension hooks for future packs
+
 ## 2.0.0 — Homestead (production base)
 
-**Replaces and obsoletes 1.0–1.1.x.** Those builds are outdated due to glitchy locate/teleport behavior.
-
-### Critical fixes
-- Dedicated `/evamod town` / `/evamod town visit` (vanilla `/locate structure` is not relied on)
-- Teleport and chat coords land on **beds / house interiors**, never underground Y≈0
-- Chunks are loaded before heightmap/bed scans
-
-### New systems
-- Friendship hearts (0–10) + milestone heart events
-- Seasons (28-day) + mid-season festivals
-- NPC birthdays + birthday gift bonus
-- Gift taste tiers (love/like/neutral/dislike/hate)
-- Errands (Help button) and `/evamod errand`
-- Mailbox (`/evamod mail`) for birthdays, festivals, notes
-- Homestead journal with hearts & birthdays
-- Expanded seasonal / gossip / adventure dialogue
-- Network protocol bumped to `2`
+Town command, safe interior teleports, hearts, seasons, birthdays, gift tastes, errands, mail, journal.
+Obsoletes 1.x.
 
 ## 1.1.5 and earlier — OUTDATED
 
-Do not use in new worlds. Known issues include unreliable town locate and teleport Y bugs.
+Do not use. Known locate/teleport bugs.

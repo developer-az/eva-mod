@@ -1,68 +1,63 @@
-# Eva Mod 2.0 — Homestead (NeoForge 26.2)
+# Eva Mod — Homestead (NeoForge 26.2)
 
 Friendly, immortal biome NPCs with homes, friendship hearts, seasons, birthdays,
-errands, mail, and multi-house towns. Built as a solid production base for Minecraft 26.2.
+errands, mail, multi-house towns, and a Homestead Primer guide book.
 
-**Targets Minecraft 26.2 + NeoForge 26.2. Current release: 2.0.0.**
+**Targets Minecraft 26.2 + NeoForge 26.2. Current release: 2.1.0.**
 
-> **Outdated:** jars **1.0–1.1.x** are unsupported. They shipped known locate/teleport
-> bugs (including landing near Y=0) and incomplete town tooling. Upgrade to **2.0.0+**.
+> **Outdated:** jars **1.0–1.1.x** are unsupported (locate/teleport bugs). Use **2.0.0+**.
+> Saves from 2.0 migrate forward via schema versions.
 
-## Features (2.0)
+## Already-explored worlds
 
-- **7 biome variants** with unique looks, name pools, and jobs.
-- **Towns**: uncommon hamlets (`npc_town`) with a plaza and 3–6 houses; solitary `npc_house` remains common.
-- **Friendship hearts (0–10)** with milestone heart-event dialogue.
-- **Seasons & festivals**: 28-day Spring/Summer/Fall/Winter cycle; festival day mid-season.
-- **Birthdays**: every NPC has a calendar birthday; gifts that day mean more.
-- **Gift tastes**: love / like / neutral / dislike / hate (personal + job + personality).
-- **Errands**: friendly NPCs (2+ hearts) offer Help-wanted fetch quests from dialogue.
-- **Mail**: birthday reminders, festival invites, and friendship notes (`/evamod mail`).
-- **Journal**: met NPCs with hearts and birthdays (`/evamod journal`).
-- **Dialogue + trading UI**: Talk / Trade / Help|Tip / Bye — less repetitive seasonal & gossip lines.
-- **Immortal NPCs** with per-player memory, daily routines, and rotating trades.
+Chunks generated **before** Eva Mod never received `npc_house` / `npc_town` pieces.
+Natural generation still works in **new** chunks. For a world that was already explored:
+
+1. Every player gets the **Homestead Primer** book once on join (inventory, or dropped at feet).
+2. Run **`/evamod settle`** once per overworld to plant a **Founder's Homestead** (one cottage + NPC) near you — no chunk regen, bounded placement.
+3. Keep exploring outward for natural towns/houses.
+
+Login never runs structure searches (MP-safe).
+
+## Future-proofing
+
+- Player + world attachments carry **schema versions** and migrate on login (`DataMigrations`).
+- Optional codec fields keep old saves loading.
+- `EvaContent` holds extension hooks for future errands / guide notes without breaking core.
+- Network protocol version lives in `ModVersions.NETWORK`.
+
+## Features
+
+- **7 biome variants**, towns, hearts, seasons/festivals, birthdays, gift tastes, errands, mail, journal
+- **Homestead Primer** written book with clickable commands (once per player; `/evamod book` for another)
+- **Safe teleports** onto beds / interiors (never Y≈0)
+- **`/evamod town`** — dedicated town finder (do not rely on vanilla `/locate structure`)
 
 ## Commands
 
 | Command | Cheats? | What it does |
 |---------|---------|----------------|
-| `/evamod town` | No | Find the nearest **town** (hamlet) and print a **safe interior landing** |
-| `/evamod town visit` | Yes | Teleport **inside** a town house (bed / interior — never Y≈0) |
-| `/evamod locate` | No | Find next house or town |
-| `/evamod visit` | Yes | Teleport into nearest house interior |
-| `/evamod journal` | No | Friends, hearts, birthdays |
-| `/evamod mail` | No | Read NPC letters |
-| `/evamod calendar` | No | Season, date, next festival |
-| `/evamod errand` | No | Active help-wanted errand |
-| `/evamod near` | No | Nearby NPCs + heart bars |
-| `/evamod version` | No | Show 2.0.0 and outdated-1.x notice |
-
-Vanilla `/locate structure evamod:npc_town` is unreliable for this mod’s custom structure type — use **`/evamod town`** instead.
+| `/evamod book` | No | Get another Homestead Primer |
+| `/evamod settle` | No | Founder's Homestead (once per overworld) |
+| `/evamod town` | No | Find nearest town + safe landing coords |
+| `/evamod town visit` | Yes | Teleport into a town house |
+| `/evamod locate` | No | Find next house/town |
+| `/evamod visit` | Yes | Teleport into house interior |
+| `/evamod journal` / `mail` / `calendar` / `errand` / `near` | No | Homestead tools |
+| `/evamod version` | No | Version + schema info |
 
 ## Building
 
-Requires Java 25 (Minecraft 26.2 toolchain).
+Requires Java 25.
 
 ```
 ./gradlew build
 ```
 
-The mod jar ends up in `build/libs/` as `evamod-2.0.0.jar`.
+Jar: `build/libs/evamod-2.1.0.jar`
 
 ## Running in dev
 
 ```
 ./gradlew runClient
 ```
-
-## Regenerating NPC textures
-
-```
-python scripts/generate_textures.py
-```
-
-## Compatibility
-
-- Registry/network IDs use `evamod`; no global mixins.
-- Structure set salts are unique.
-- Safe for dedicated multiplayer (server authority for dialogue/trades/memory).

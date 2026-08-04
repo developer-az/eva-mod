@@ -108,8 +108,8 @@ public final class SettlementLocator {
                 String kind = job.townsOnly ? "npc_town" : "npc_house/npc_town";
                 player.sendSystemMessage(Component.literal(
                         "No new " + kind + " found within " + LOCATE_CHUNK_RADIUS
-                                + " chunks. Travel farther, explore new biomes, then try again"
-                                + " — or /evamod locate reset if you already found nearby ones.")
+                                + " chunks. Travel to unexplored land, or run /evamod settle once for a Founder's Homestead"
+                                + " — then /evamod locate reset if you already skipped nearby finds.")
                         .withStyle(ChatFormatting.RED));
             } else if (job.shouldAnnounceProgress()) {
                 player.sendSystemMessage(Component.literal(
@@ -436,7 +436,7 @@ public final class SettlementLocator {
         return spaceClear && floorSolid;
     }
 
-    static MutableComponent clickablePos(Component prefix, BlockPos pos) {
+    public static MutableComponent clickablePos(Component prefix, BlockPos pos) {
         // Never suggest a Y=0 teleport in chat.
         int y = Math.max(pos.getY(), MIN_SAFE_Y);
         String coords = pos.getX() + " " + y + " " + pos.getZ();

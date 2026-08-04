@@ -1,15 +1,18 @@
 package com.eva.evamod.command;
 
 import com.eva.evamod.EvaMod;
+import com.eva.evamod.ModVersions;
 import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.entity.BiomeNpc;
 import com.eva.evamod.friendship.Hearts;
 import com.eva.evamod.mail.MailMessage;
 import com.eva.evamod.mail.MailService;
+import com.eva.evamod.player.GuideBookService;
 import com.eva.evamod.player.HouseIndexEntry;
 import com.eva.evamod.player.PlayerEvaData;
 import com.eva.evamod.quest.Errand;
 import com.eva.evamod.registry.ModAttachments;
+import com.eva.evamod.world.HomesteadBootstrap;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -19,9 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -43,7 +43,6 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Player-facing Eva Mod 2.0 commands.
@@ -64,7 +63,6 @@ public final class EvaModCommands {
             TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_town"));
 
     private static final double NEAR_RADIUS = 48.0;
-    private static final Set<UUID> TIPPED_THIS_SESSION = ConcurrentHashMap.newKeySet();
 
     private static final Map<String, String> COMMAND_ALIASES = Map.ofEntries(
             Map.entry("help", "help"),
@@ -95,10 +93,16 @@ public final class EvaModCommands {
             Map.entry("date", "calendar"),
             Map.entry("errand", "errand"),
             Map.entry("quest", "errand"),
+            Map.entry("book", "book"),
+            Map.entry("primer", "book"),
+            Map.entry("guide", "book"),
+            Map.entry("settle", "settle"),
+            Map.entry("found", "settle"),
+            Map.entry("homestead", "settle"),
             Map.entry("version", "version"));
 
     private static final List<String> KNOWN_COMMANDS =
-            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "version");
+            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book", "settle", "version");
 
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -109,6 +113,24 @@ public final class EvaModCommands {
                 .then(Commands.literal("help").executes(ctx -> help(ctx.getSource())))
                 .then(Commands.literal("?").executes(ctx -> help(ctx.getSource())))
                 .then(Commands.literal("version").executes(ctx -> version(ctx.getSource())))
+                .then(Commands.literal("book")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("primer")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("guide")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("settle")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
+                .then(Commands.literal("found")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
+                .then(Commands.literal("homestead")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
                 .then(Commands.literal("locate")
                         .executes(ctx -> locate(ctx.getSource(), false))
                         .then(Commands.literal("reset").executes(ctx -> locateReset(ctx.getSource())))
@@ -207,44 +229,26 @@ public final class EvaModCommands {
         dispatcher.register(Commands.literal("eva-mod").redirect(root));
     }
 
-    @SubscribeEvent
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        MailService.tryDeliver(player);
-        if (!TIPPED_THIS_SESSION.add(player.getUUID())) {
-            return;
-        }
-        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
-        MutableComponent tip = Component.literal("Eva Mod 2.0 Homestead — type ")
-                .withStyle(ChatFormatting.GRAY)
-                .append(suggestCommand("/evamod", "Show Eva Mod help"))
-                .append(Component.literal(" · find a town with ").withStyle(ChatFormatting.GRAY))
-                .append(suggestCommand("/evamod town", "Find nearest npc_town"));
-        player.sendSystemMessage(tip);
-        int unread = data.unreadMailCount();
-        if (unread > 0) {
-            player.sendSystemMessage(Component.literal("You have " + unread + " unread letter(s). ")
-                    .withStyle(ChatFormatting.YELLOW)
-                    .append(suggestCommand("/evamod mail", "Read your mail")));
-        }
-    }
-
     private static int help(CommandSourceStack source) {
-        source.sendSuccess(() -> Component.literal("Eva Mod 2.0 — Homestead guide")
+        source.sendSuccess(() -> Component.literal("Eva Mod " + ModVersions.DISPLAY + " — " + ModVersions.CODENAME)
                 .withStyle(ChatFormatting.GOLD), false);
-        source.sendSuccess(() -> Component.literal("Open chat with T, then type a command below.")
+        source.sendSuccess(() -> Component.literal("Open your Homestead Primer book, or type a command below.")
                 .withStyle(ChatFormatting.GRAY), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod book", "Get Homestead Primer"),
+                Component.literal(" — get the command primer book")), false);
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod town", "Find nearest town"),
                 Component.literal(" — find the nearest multi-NPC town (no cheats)")), false);
         source.sendSuccess(() -> line(
-                suggestCommand("/evamod town visit", "Teleport into a town house"),
-                Component.literal(" — teleport inside a town house (needs cheats)")), false);
-        source.sendSuccess(() -> line(
                 suggestCommand("/evamod locate", "Find next house/town"),
                 Component.literal(" — find the next nearest house or town")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod settle", "Founder's Homestead"),
+                Component.literal(" — plant one starter home (pre-mod / explored worlds)")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod town visit", "Teleport into a town house"),
+                Component.literal(" — teleport inside a town house (needs cheats)")), false);
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod visit", "Teleport to nearest settlement"),
                 Component.literal(" — teleport into a house (bed/interior, needs cheats)")), false);
@@ -263,17 +267,39 @@ public final class EvaModCommands {
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod near", "List nearby NPCs"),
                 Component.literal(" — NPCs near you")), false);
-        source.sendSuccess(() -> Component.literal("Tip: gifts, errands, birthdays & seasons deepen friendships. 1.x jars are outdated.")
+        source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
                 .withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
 
     private static int version(CommandSourceStack source) {
-        source.sendSuccess(() -> Component.literal("Eva Mod 2.0.0 Homestead (Minecraft 26.2)")
+        source.sendSuccess(() -> Component.literal("Eva Mod " + ModVersions.DISPLAY + " " + ModVersions.CODENAME
+                        + " (Minecraft 26.2) · player schema " + ModVersions.PLAYER_SCHEMA
+                        + " · world schema " + ModVersions.WORLD_SCHEMA)
                 .withStyle(ChatFormatting.AQUA), false);
-        source.sendSuccess(() -> Component.literal("Versions 1.0–1.1.x are outdated and unsupported (known teleport/locate bugs).")
+        source.sendSuccess(() -> Component.literal("Supported from " + ModVersions.MIN_SUPPORTED_DISPLAY
+                        + ". Versions 1.0–1.1.x are outdated and unsupported.")
                 .withStyle(ChatFormatting.GRAY), false);
         return 1;
+    }
+
+    private static int book(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        GuideBookService.giveAnother(player);
+        source.sendSuccess(() -> Component.literal("Homestead Primer added to your inventory (or dropped nearby).")
+                .withStyle(ChatFormatting.GREEN), false);
+        return 1;
+    }
+
+    private static int settle(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        return HomesteadBootstrap.settle(player);
     }
 
     private static int locate(CommandSourceStack source, boolean townsOnly) {

@@ -11,8 +11,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 public final class ModNetworking {
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        // Bump network version for 2.0 payload fields (hearts / birthday / errand).
-        PayloadRegistrar registrar = event.registrar("2");
+        PayloadRegistrar registrar = event.registrar(Integer.toString(com.eva.evamod.ModVersions.NETWORK));
 
         registrar.playToClient(OpenDialoguePayload.TYPE, OpenDialoguePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientDialogueHandler.handle(payload)));

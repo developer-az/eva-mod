@@ -6,11 +6,11 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="Az040"
 description='''
-Eva Mod 2.0 Homestead — production-ready biome NPCs with towns, friendship hearts,
-birthdays, seasons, festivals, errands, mail, and safe house teleports.
+Eva Mod 2.1 Homestead — production biome NPCs with towns, friendship hearts,
+birthdays, seasons, festivals, errands, mail, guide book, and Founder's Homestead
+for worlds explored before the mod was installed.
 
-IMPORTANT: Versions 1.0–1.1.x are outdated and unsupported (locate/teleport bugs).
-Use 2.0.0+ only.
+Schema-versioned saves for future updates. Versions 1.0–1.1.x are outdated.
 '''
 
 [[dependencies.${mod_id}]]

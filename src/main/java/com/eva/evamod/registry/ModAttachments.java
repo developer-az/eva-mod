@@ -2,6 +2,7 @@ package com.eva.evamod.registry;
 
 import com.eva.evamod.EvaMod;
 import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.world.EvaWorldData;
 import com.eva.evamod.world.SettlementCache;
 import com.eva.evamod.world.UsedNpcNamesData;
 import java.util.function.Supplier;
@@ -30,6 +31,12 @@ public final class ModAttachments {
             "settlement_cache",
             () -> AttachmentType.builder(SettlementCache::new)
                     .serialize(SettlementCache.CODEC.fieldOf("value"))
+                    .build());
+
+    public static final Supplier<AttachmentType<EvaWorldData>> WORLD_DATA = ATTACHMENT_TYPES.register(
+            "world_data",
+            () -> AttachmentType.builder(EvaWorldData::new)
+                    .serialize(EvaWorldData.CODEC.fieldOf("value"))
                     .build());
 
     private ModAttachments() {

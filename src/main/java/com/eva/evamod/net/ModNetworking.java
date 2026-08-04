@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 public final class ModNetworking {
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar(Integer.toString(com.eva.evamod.ModVersions.NETWORK));
 
         registrar.playToClient(OpenDialoguePayload.TYPE, OpenDialoguePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientDialogueHandler.handle(payload)));
@@ -34,6 +34,9 @@ public final class ModNetworking {
                         case DialogueActionPayload.ACTION_TALK ->
                                 npc.openDialogue(player, DialogueManager.Context.SMALL_TALK);
                         case DialogueActionPayload.ACTION_TRADE -> npc.startTrading(player);
+                        case DialogueActionPayload.ACTION_ERRAND -> npc.handleErrand(player);
+                        case DialogueActionPayload.ACTION_TIP ->
+                                npc.openDialogue(player, DialogueManager.Context.ADVENTURE_TIP);
                         default -> {
                         }
                     }

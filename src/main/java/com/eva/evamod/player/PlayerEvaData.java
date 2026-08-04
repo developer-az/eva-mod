@@ -1,32 +1,102 @@
 package com.eva.evamod.player;
 
+import com.eva.evamod.ModVersions;
+import com.eva.evamod.mail.MailMessage;
+import com.eva.evamod.quest.Errand;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 
-/** Per-player house index + locate skip list. Persisted via NeoForge attachments. */
+/**
+ * Per-player Eva state. Schema-versioned for forward-compatible saves.
+ * Keep mutations cheap — this is read/written on login and dialogue, never per-tick.
+ */
 public class PlayerEvaData {
     public static final Codec<PlayerEvaData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.INT.optionalFieldOf("schema", 0).forGetter(d -> d.schemaVersion),
             HouseIndexEntry.CODEC.listOf().optionalFieldOf("houses", List.of()).forGetter(d -> d.houses),
-            BlockPos.CODEC.listOf().optionalFieldOf("located", List.of()).forGetter(d -> d.locatedSkips)
-    ).apply(instance, PlayerEvaData::new));
+            BlockPos.CODEC.listOf().optionalFieldOf("located", List.of()).forGetter(d -> d.locatedSkips),
+            Errand.CODEC.optionalFieldOf("errand").forGetter(d -> Optional.ofNullable(d.activeErrand)),
+            MailMessage.LIST_CODEC.optionalFieldOf("mail", List.of()).forGetter(d -> d.mail),
+            Codec.STRING.listOf().optionalFieldOf("heartEvents", List.of()).forGetter(d -> new ArrayList<>(d.seenHeartEvents)),
+            Codec.LONG.optionalFieldOf("lastMailDay", -1L).forGetter(d -> d.lastMailDay),
+            Codec.INT.optionalFieldOf("errandsDone", 0).forGetter(d -> d.errandsCompleted),
+            Codec.BOOL.optionalFieldOf("gotGuide", false).forGetter(d -> d.receivedGuideBook)
+    ).apply(instance, PlayerEvaData::fromCodec));
 
-    /** Only skip the same structure footprint — not an entire neighborhood. */
     private static final int SKIP_RADIUS_SQR = 20 * 20;
     private static final int MAX_LOCATED = 128;
+    private static final int MAX_MAIL = 24;
 
+    private int schemaVersion;
     private final List<HouseIndexEntry> houses;
     private final List<BlockPos> locatedSkips;
+    private Errand activeErrand;
+    private final List<MailMessage> mail;
+    private final Set<String> seenHeartEvents;
+    private long lastMailDay;
+    private int errandsCompleted;
+    private boolean receivedGuideBook;
 
     public PlayerEvaData() {
-        this(List.of(), List.of());
+        this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false);
     }
 
-    public PlayerEvaData(List<HouseIndexEntry> houses, List<BlockPos> locatedSkips) {
+    public PlayerEvaData(
+            int schemaVersion,
+            List<HouseIndexEntry> houses,
+            List<BlockPos> locatedSkips,
+            Errand activeErrand,
+            List<MailMessage> mail,
+            Set<String> seenHeartEvents,
+            long lastMailDay,
+            int errandsCompleted,
+            boolean receivedGuideBook) {
+        this.schemaVersion = schemaVersion;
         this.houses = new ArrayList<>(houses);
         this.locatedSkips = new ArrayList<>(locatedSkips);
+        this.activeErrand = activeErrand;
+        this.mail = new ArrayList<>(mail);
+        this.seenHeartEvents = new HashSet<>(seenHeartEvents);
+        this.lastMailDay = lastMailDay;
+        this.errandsCompleted = errandsCompleted;
+        this.receivedGuideBook = receivedGuideBook;
+    }
+
+    private static PlayerEvaData fromCodec(
+            int schema,
+            List<HouseIndexEntry> houses,
+            List<BlockPos> located,
+            Optional<Errand> errand,
+            List<MailMessage> mail,
+            List<String> heartEvents,
+            long lastMailDay,
+            int errandsDone,
+            boolean gotGuide) {
+        return new PlayerEvaData(
+                schema, houses, located, errand.orElse(null), mail, new HashSet<>(heartEvents),
+                lastMailDay, errandsDone, gotGuide);
+    }
+
+    public int schemaVersion() {
+        return schemaVersion;
+    }
+
+    public void setSchemaVersion(int schemaVersion) {
+        this.schemaVersion = schemaVersion;
+    }
+
+    public boolean receivedGuideBook() {
+        return receivedGuideBook;
+    }
+
+    public void setReceivedGuideBook(boolean receivedGuideBook) {
+        this.receivedGuideBook = receivedGuideBook;
     }
 
     public List<HouseIndexEntry> houses() {
@@ -37,7 +107,75 @@ public class PlayerEvaData {
         return locatedSkips;
     }
 
-    /** Locate skip list only — meeting NPCs must not exhaust locate. */
+    public Errand activeErrand() {
+        return activeErrand;
+    }
+
+    public void setActiveErrand(Errand errand) {
+        this.activeErrand = errand;
+    }
+
+    public void clearErrand() {
+        this.activeErrand = null;
+    }
+
+    public void completeErrand() {
+        if (activeErrand != null) {
+            errandsCompleted++;
+            activeErrand = null;
+        }
+    }
+
+    public int errandsCompleted() {
+        return errandsCompleted;
+    }
+
+    public List<MailMessage> mail() {
+        return mail;
+    }
+
+    public long lastMailDay() {
+        return lastMailDay;
+    }
+
+    public void setLastMailDay(long day) {
+        this.lastMailDay = day;
+    }
+
+    public void addMail(MailMessage message) {
+        mail.addFirst(message);
+        while (mail.size() > MAX_MAIL) {
+            mail.removeLast();
+        }
+    }
+
+    public int unreadMailCount() {
+        int n = 0;
+        for (MailMessage m : mail) {
+            if (!m.read()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    public void markAllMailRead() {
+        for (int i = 0; i < mail.size(); i++) {
+            MailMessage m = mail.get(i);
+            if (!m.read()) {
+                mail.set(i, m.markRead());
+            }
+        }
+    }
+
+    public boolean hasSeenHeartEvent(String key) {
+        return seenHeartEvents.contains(key);
+    }
+
+    public void markHeartEvent(String key) {
+        seenHeartEvents.add(key);
+    }
+
     public boolean isLocateSkipped(BlockPos pos) {
         for (BlockPos skip : locatedSkips) {
             if (skip.distSqr(pos) <= SKIP_RADIUS_SQR) {
@@ -74,6 +212,8 @@ public class PlayerEvaData {
     }
 
     public PlayerEvaData copy() {
-        return new PlayerEvaData(houses, locatedSkips);
+        return new PlayerEvaData(
+                schemaVersion, houses, locatedSkips, activeErrand, mail, seenHeartEvents,
+                lastMailDay, errandsCompleted, receivedGuideBook);
     }
 }

@@ -6,9 +6,11 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="Az040"
 description='''
-Adds friendly, immortal NPCs to every major biome. Each NPC has a home, a daily job,
-personality, memories of every player they meet, dialogue that changes with your reputation,
-gifts, and trades that rotate every day.
+Eva Mod 2.1 Homestead — production biome NPCs with towns, friendship hearts,
+birthdays, seasons, festivals, errands, mail, guide book, and Founder's Homestead
+for worlds explored before the mod was installed.
+
+Schema-versioned saves for future updates. Versions 1.0–1.1.x are outdated.
 '''
 
 [[dependencies.${mod_id}]]

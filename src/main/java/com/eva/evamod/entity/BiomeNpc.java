@@ -1,26 +1,28 @@
 package com.eva.evamod.entity;
 
+import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.dialogue.DialogueManager;
 import com.eva.evamod.entity.ai.ReturnHomeGoal;
 import com.eva.evamod.entity.ai.SleepGoal;
 import com.eva.evamod.entity.ai.SocializeGoal;
 import com.eva.evamod.entity.ai.TradingFreezeGoal;
 import com.eva.evamod.entity.ai.WorkGoal;
+import com.eva.evamod.friendship.Hearts;
+import com.eva.evamod.gift.GiftTaste;
 import com.eva.evamod.memory.NpcMemory;
 import com.eva.evamod.net.OpenDialoguePayload;
 import com.eva.evamod.net.OpenTradePayload;
 import com.eva.evamod.player.HouseIndexEntry;
 import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.quest.Errand;
 import com.eva.evamod.registry.ModAttachments;
 import com.eva.evamod.trade.NpcTrades;
 import com.eva.evamod.world.UsedNpcNamesData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -79,15 +81,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     public static final int HOME_RADIUS = 24;
     private static final int FRIEND_REP_THRESHOLD = 40;
     private static final int BUBBLE_DURATION = 60;
-
-    private static final Item[] FAVORITE_GIFTS = {
-            Items.COOKIE, Items.PUMPKIN_PIE, Items.APPLE, Items.SWEET_BERRIES,
-            Items.HONEY_BOTTLE, Items.GLOW_BERRIES, Items.CAKE, Items.POPPY,
-            Items.SUNFLOWER, Items.MELON_SLICE, Items.BAKED_POTATO, Items.COCOA_BEANS};
-
-    private static final Set<Item> JUNK_GIFTS = Set.of(
-            Items.ROTTEN_FLESH, Items.DIRT, Items.POISONOUS_POTATO,
-            Items.SPIDER_EYE, Items.PUFFERFISH, Items.GRAVEL);
+    private static final int ERRAND_HEART_GATE = 2;
 
     private final NpcMemory memory = new NpcMemory();
     private BlockPos homePos = BlockPos.ZERO;
@@ -208,7 +202,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     }
 
     public Item getFavoriteGift() {
-        return FAVORITE_GIFTS[Math.floorMod(this.getUUID().hashCode(), FAVORITE_GIFTS.length)];
+        return GiftTaste.personalLove(this.getUUID());
     }
 
     public String getFavoriteGiftName() {
@@ -217,6 +211,22 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
 
     public String getLastGiftName() {
         return lastGiftName;
+    }
+
+    public int getBirthdayDayOfYear() {
+        return SeasonCalendar.birthdayDayOfYear(this.getUUID().hashCode());
+    }
+
+    public String getBirthdayLabel() {
+        return SeasonCalendar.formatBirthday(getBirthdayDayOfYear());
+    }
+
+    public boolean isBirthday(long day) {
+        return SeasonCalendar.isBirthday(day, getBirthdayDayOfYear());
+    }
+
+    public int heartsWith(ServerPlayer player) {
+        return Hearts.fromReputation(memory.get(player.getUUID(), currentDay()).reputation);
     }
 
     public void trySay(SpeechBubbles.Kind kind, int minCooldownTicks) {
@@ -413,29 +423,58 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     public void openDialogue(ServerPlayer player, DialogueManager.Context context) {
         long day = currentDay();
         NpcMemory.Record record = memory.get(player.getUUID(), day);
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        Errand active = data.activeErrand();
+
+        // Heart events fire once per milestone when greeting/talking.
+        if ((context == DialogueManager.Context.GREETING || context == DialogueManager.Context.SMALL_TALK)
+                && record.moodTier() >= NpcMemory.MOOD_NEUTRAL) {
+            int hearts = Hearts.fromReputation(record.reputation);
+            if (Hearts.isMilestone(hearts)) {
+                String key = this.getUUID() + ":heart:" + hearts;
+                if (!data.hasSeenHeartEvent(key)) {
+                    data.markHeartEvent(key);
+                    player.setData(ModAttachments.PLAYER_DATA, data.copy());
+                    context = DialogueManager.Context.HEART_EVENT;
+                }
+            }
+        }
+
         String line = DialogueManager.pickLine(this, record, player.getName().getString(),
-                context, day, this.random);
-        if (context == DialogueManager.Context.GREETING || context == DialogueManager.Context.SMALL_TALK) {
+                context, day, this.random, player, active);
+        if (context == DialogueManager.Context.GREETING
+                || context == DialogueManager.Context.SMALL_TALK
+                || context == DialogueManager.Context.HEART_EVENT
+                || context == DialogueManager.Context.BIRTHDAY
+                || context == DialogueManager.Context.FESTIVAL
+                || context == DialogueManager.Context.ADVENTURE_TIP) {
             memory.recordTalk(player.getUUID(), day);
         }
         this.clearRestPose();
         this.getLookControl().setLookAt(player);
         rememberInHouseIndex(player);
+
+        int hearts = Hearts.fromReputation(memory.get(player.getUUID(), day).reputation);
+        boolean canErrand = hearts >= ERRAND_HEART_GATE
+                && (active == null || active.completed() || active.matchesNpc(this.getUUID()));
         PacketDistributor.sendToPlayer(player, new OpenDialoguePayload(
                 this.getId(), this.getNpcName(),
                 personality.getDisplayName() + " " + this.getVariant().getDisplayName()
                         + " " + this.getJob().getDisplayName(),
-                line, record.moodTier()));
+                line, record.moodTier(), hearts, getBirthdayLabel(), canErrand));
     }
 
     private void rememberInHouseIndex(ServerPlayer player) {
         PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        int hearts = Hearts.fromReputation(memory.get(player.getUUID(), currentDay()).reputation);
         HouseIndexEntry entry = new HouseIndexEntry(
                 this.getNpcName(),
                 this.getJob().getDisplayName(),
                 this.getPersonality().getDisplayName(),
                 this.getVariant().getDisplayName(),
-                this.hasHome() ? this.homePos : this.blockPosition());
+                this.hasHome() ? this.homePos : this.blockPosition(),
+                hearts,
+                getBirthdayLabel());
         data.meetNpc(entry);
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
     }
@@ -450,32 +489,37 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             return;
         }
 
-        DialogueManager.Context reaction;
-        int repChange;
-        boolean favorite = stack.is(this.getFavoriteGift());
-        if (favorite) {
-            reaction = DialogueManager.Context.GIFT_FAVORITE;
-            repChange = 12;
-        } else if (JUNK_GIFTS.contains(stack.getItem())) {
-            reaction = DialogueManager.Context.GIFT_JUNK;
-            repChange = -3;
-        } else if (stack.get(DataComponents.FOOD) != null) {
-            reaction = DialogueManager.Context.GIFT_LIKED;
-            repChange = 5;
-        } else {
-            reaction = DialogueManager.Context.GIFT_MEH;
-            repChange = 2;
+        GiftTaste taste = GiftTaste.rate(stack.getItem(), this.getUUID(), this.getJob(), this.personality);
+        boolean birthday = isBirthday(day);
+        int repChange = taste.reputationDelta();
+        if (birthday && taste != GiftTaste.HATE && taste != GiftTaste.DISLIKE) {
+            repChange = Math.max(repChange * 2, repChange + 10);
         }
 
-        memory.recordGift(player.getUUID(), day, favorite, repChange);
-        if (!player.getAbilities().instabuild && repChange > -1) {
+        DialogueManager.Context reaction;
+        if (birthday && (taste == GiftTaste.LOVE || taste == GiftTaste.LIKE)) {
+            reaction = DialogueManager.Context.GIFT_BIRTHDAY;
+        } else {
+            reaction = switch (taste) {
+                case LOVE -> DialogueManager.Context.GIFT_FAVORITE;
+                case LIKE -> DialogueManager.Context.GIFT_LIKED;
+                case NEUTRAL -> DialogueManager.Context.GIFT_MEH;
+                case DISLIKE, HATE -> DialogueManager.Context.GIFT_JUNK;
+            };
+        }
+
+        memory.recordGift(player.getUUID(), day, taste == GiftTaste.LOVE, repChange);
+        if (!player.getAbilities().instabuild && repChange >= 0) {
+            stack.shrink(1);
+        } else if (!player.getAbilities().instabuild && taste == GiftTaste.DISLIKE) {
+            // Disliked gifts still get taken (awkward), hated ones get refused.
             stack.shrink(1);
         }
 
         trySay(SpeechBubbles.Kind.GIFT, 40);
 
         if (this.level() instanceof ServerLevel serverLevel) {
-            if (favorite) {
+            if (taste == GiftTaste.LOVE || birthday) {
                 serverLevel.sendParticles(ParticleTypes.HEART,
                         this.getX(), this.getEyeY() + 0.5, this.getZ(), 5, 0.3, 0.3, 0.3, 0.0);
                 this.playSound(SoundEvents.VILLAGER_CELEBRATE, this.getSoundVolume(), this.getVoicePitch());
@@ -490,6 +534,49 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             }
         }
         this.openDialogue(player, reaction);
+    }
+
+    /** Offer, check, or complete an errand from the dialogue Help button. */
+    public void handleErrand(ServerPlayer player) {
+        long day = currentDay();
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        Errand active = data.activeErrand();
+        int hearts = heartsWith(player);
+
+        if (active != null && !active.completed() && active.matchesNpc(this.getUUID())) {
+            Item need = active.item();
+            boolean paid = player.getAbilities().instabuild
+                    || (need != Items.AIR && takeCost(player, new ItemStack(need, active.count())));
+            if (need != Items.AIR && paid) {
+                memory.recordGift(player.getUUID(), day, false, active.rewardRep());
+                data.completeErrand();
+                player.setData(ModAttachments.PLAYER_DATA, data.copy());
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.HEART,
+                            this.getX(), this.getEyeY() + 0.5, this.getZ(), 6, 0.35, 0.35, 0.35, 0.0);
+                }
+                this.openDialogue(player, DialogueManager.Context.ERRAND_COMPLETE);
+            } else {
+                this.openDialogue(player, DialogueManager.Context.ERRAND_PROGRESS);
+            }
+            return;
+        }
+
+        if (active != null && !active.completed() && !active.matchesNpc(this.getUUID())) {
+            // Already helping someone else — remind them via progress line with that errand.
+            this.openDialogue(player, DialogueManager.Context.ERRAND_PROGRESS);
+            return;
+        }
+
+        if (hearts < ERRAND_HEART_GATE) {
+            this.openDialogue(player, DialogueManager.Context.SMALL_TALK);
+            return;
+        }
+
+        Errand errand = Errand.create(this.getNpcName(), this.getUUID(), day, this.random);
+        data.setActiveErrand(errand);
+        player.setData(ModAttachments.PLAYER_DATA, data.copy());
+        this.openDialogue(player, DialogueManager.Context.ERRAND_OFFER);
     }
 
     public void startTrading(ServerPlayer player) {

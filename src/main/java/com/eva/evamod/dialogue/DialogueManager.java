@@ -1,25 +1,29 @@
 package com.eva.evamod.dialogue;
 
+import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.entity.BiomeNpc;
 import com.eva.evamod.entity.NpcJob;
 import com.eva.evamod.entity.NpcPersonality;
 import com.eva.evamod.entity.NpcVariant;
+import com.eva.evamod.friendship.Hearts;
 import com.eva.evamod.memory.NpcMemory;
+import com.eva.evamod.player.HouseIndexEntry;
+import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.quest.Errand;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
 /**
- * The dialogue database. Every line an NPC can say lives here, organized by
- * context, mood and personality. Lines are picked server-side using the NPC's
- * memory of the player, then sent to the client as plain text.
+ * Dialogue database — mood, personality, season, festival, birthday, heart events,
+ * gossip, and adventure tips so conversations stay fresh.
  */
 public final class DialogueManager {
 
-    /** What situation the NPC is reacting to. */
     public enum Context {
         GREETING,
         SMALL_TALK,
@@ -28,12 +32,16 @@ public final class DialogueManager {
         GIFT_MEH,
         GIFT_JUNK,
         GIFT_ALREADY,
-        WOKEN
+        GIFT_BIRTHDAY,
+        WOKEN,
+        HEART_EVENT,
+        ERRAND_OFFER,
+        ERRAND_PROGRESS,
+        ERRAND_COMPLETE,
+        FESTIVAL,
+        BIRTHDAY,
+        ADVENTURE_TIP
     }
-
-    // ------------------------------------------------------------------
-    // Greetings by relationship
-    // ------------------------------------------------------------------
 
     private static final String[] FIRST_MEETING = {
             "Oh! A new face around here. I'm %NAME%, the local %JOB%.",
@@ -41,7 +49,8 @@ public final class DialogueManager {
             "Hello, stranger. %NAME%'s the name. If you ever need a %JOB%, that's me.",
             "Welcome to my little corner of the %BIOME%. I'm %NAME%.",
             "Ooh, a visitor! I'm %NAME%. Wipe your boots, mind the flowers, and welcome!",
-            "You're not from around here, are you? I'm %NAME%. Pleasure!"
+            "You're not from around here, are you? I'm %NAME%. Pleasure!",
+            "Fresh footprints on my path! I'm %NAME%. Stick around — %SEASON% is a fine season to make friends."
     };
 
     private static final String[] HIT_TODAY = {
@@ -79,7 +88,8 @@ public final class DialogueManager {
             "Good day. Fine weather for a %JOB%, isn't it?",
             "Ah, %PLAYER%. What brings you by?",
             "Need something? My stock changes every day, mind you.",
-            "Oh, hello! I was just thinking about lunch."
+            "Oh, hello! I was just thinking about lunch.",
+            "%SEASON% %DAY% already. Time moves oddly out here."
     };
 
     private static final String[] FRIENDLY = {
@@ -104,10 +114,6 @@ public final class DialogueManager {
             "Look who finally remembered I exist! %DAYS% days, %PLAYER%."
     };
 
-    // ------------------------------------------------------------------
-    // Situational
-    // ------------------------------------------------------------------
-
     private static final String[] RAINY_DAY = {
             "Dreadful weather. Good thing I have a roof, unlike some mobs I could mention.",
             "Rain again! The roof is holding. Probably.",
@@ -127,10 +133,6 @@ public final class DialogueManager {
             "Five more minutes... no, wait, you're still here. Hello.",
             "Do you always wake people up like this? ...At least say hi to the moon for me."
     };
-
-    // ------------------------------------------------------------------
-    // Gifts
-    // ------------------------------------------------------------------
 
     private static final String[] GIFT_FAVORITE_LINES = {
             "%ITEM%?! For ME? This is my absolute favorite! How did you know?!",
@@ -165,58 +167,119 @@ public final class DialogueManager {
             "My pockets are full and my heart is fuller. Tomorrow, okay?"
     };
 
-    // ------------------------------------------------------------------
-    // Personality small talk
-    // ------------------------------------------------------------------
+    private static final String[] GIFT_BIRTHDAY_LINES = {
+            "A birthday gift?! %ITEM% on MY day? %PLAYER%, you've made this year unforgettable!",
+            "You remembered my birthday AND brought %ITEM%? I might actually cry.",
+            "Birthday AND %ITEM%! The stars aligned. Thank you, thank you!"
+    };
+
+    private static final String[] BIRTHDAY_GREET = {
+            "It's my birthday today! %BIRTHDAY%! Don't make it weird... unless you brought cake.",
+            "Guess what day it is? Mine. Birthday. Just saying.",
+            "I've been humming birthday tunes since dawn. %BIRTHDAY% vibes only."
+    };
+
+    private static final String[] FESTIVAL_LINES = {
+            "Happy %FESTIVAL%! The whole hamlet feels alive today.",
+            "%FESTIVAL% is my favorite excuse to talk to everyone. Including you!",
+            "Did you see the plaza? %FESTIVAL% decorations... well, imaginary ones. We make do."
+    };
+
+    private static final String[] ERRAND_OFFER_LINES = {
+            "Hey %PLAYER% — could you bring me %COUNT%x %NEED%? I'd owe you one.",
+            "Help wanted: I need %COUNT%x %NEED%. Think you can swing by later?",
+            "If you're adventuring anyway, grab %COUNT%x %NEED% for me? Pretty please."
+    };
+
+    private static final String[] ERRAND_PROGRESS_LINES = {
+            "Still need %COUNT%x %NEED%, %PLAYER%. No rush — well, a little rush.",
+            "Any luck finding %NEED%? I need %COUNT% of them.",
+            "My errand stands: %COUNT%x %NEED%. You're my hero-in-progress."
+    };
+
+    private static final String[] ERRAND_COMPLETE_LINES = {
+            "You actually brought it! %NEED%! You're a legend, %PLAYER%.",
+            "Errand complete! Take this friendship bump — you've earned it.",
+            "Perfect timing. %NEED% received. I won't forget this favor."
+    };
+
+    private static final String[] ADVENTURE_TIPS = {
+            "Cartographer tip: solitary houses hide in every major biome — towns are rarer and worth the hike.",
+            "If you ever get lost, /evamod town finds hamlets without needing vanilla locate.",
+            "I heard a miner muttering about deep caves west of here. Or east. Directions aren't my job.",
+            "Bring a bedroll? Nah — every house has a bed. Towns have several. Handy.",
+            "Festival days make everyone chatty. Check /evamod calendar so you don't miss one.",
+            "Birthdays are written in the stars — check your journal. Gifts that day hit different.",
+            "Curious folk leave rumors. Follow a few and the world opens up."
+    };
+
+    private static final Map<Integer, String[]> HEART_EVENTS = Map.of(
+            2, new String[]{
+                    "We've talked enough that I trust you a little. That's rare for me.",
+                    "Two hearts already? Look at us, becoming neighbors."},
+            4, new String[]{
+                    "I saved you a seat by the window. Figuratively. Emotionally. It's yours.",
+                    "Four hearts! Want to hear a secret? I name the pumpkins."},
+            6, new String[]{
+                    "You're one of my closest friends in the %BIOME%, %PLAYER%. Don't vanish on me.",
+                    "Six hearts. I'd lend you my spare boots. They're only slightly muddy."},
+            8, new String[]{
+                    "I wrote your name in my little book of Important People. In ink!",
+                    "Eight hearts. If I ever throw a feast, you're at the head of the table."},
+            10, new String[]{
+                    "Ten hearts. You're family now. Messy, wonderful, chosen family.",
+                    "Maximum hearts! Whatever happens out there, you have a home here."}
+    );
 
     private static final Map<NpcPersonality, String[]> PERSONALITY_TALK = new EnumMap<>(NpcPersonality.class);
+    private static final Map<NpcJob, String[]> JOB_SMALL_TALK = new EnumMap<>(NpcJob.class);
+    private static final Map<NpcVariant, String[]> BIOME_SMALL_TALK = new EnumMap<>(NpcVariant.class);
+    private static final Map<SeasonCalendar.Season, String[]> SEASON_TALK = new EnumMap<>(SeasonCalendar.Season.class);
 
     static {
         PERSONALITY_TALK.put(NpcPersonality.CHEERFUL, new String[]{
                 "Isn't today just the BEST day? I mean, look at it!",
                 "I hummed a little song while working today. Want to hear it? Too late, humming again!",
                 "Smiling is free, you know. I stock up every morning.",
-                "Every sunrise here is my favorite sunrise."});
+                "Every sunrise here is my favorite sunrise.",
+                "I waved at a bee earlier. It waved back. Probably."});
         PERSONALITY_TALK.put(NpcPersonality.SHY, new String[]{
                 "Oh, um. Hello. Sorry, I'm not great at... this.",
                 "I practiced saying hi in the mirror this morning. It went better than this.",
                 "You can stay, just... maybe don't stand SO close?",
-                "I like quiet days. Today is nice and quiet. Well, it was."});
+                "I like quiet days. Today is nice and quiet. Well, it was.",
+                "If I speak softly, it's not you — it's just my volume knob."});
         PERSONALITY_TALK.put(NpcPersonality.DRAMATIC, new String[]{
                 "The wind! The sky! The DRAMA of it all!",
                 "I have seen a thousand sunsets and each one has CHANGED me.",
                 "My life is a saga, %PLAYER%, and you have just entered chapter twelve.",
-                "One day they will write songs about my work. Beautiful, tragic songs."});
+                "One day they will write songs about my work. Beautiful, tragic songs.",
+                "%SEASON% arrives like a curtain rising. Enter: me."});
         PERSONALITY_TALK.put(NpcPersonality.GRUMPY, new String[]{
                 "Back in my day, creepers kept a respectful distance.",
                 "My knees ache. That means rain. Or visitors. Apparently both.",
                 "I'm not grumpy. This is just my face.",
-                "Everything was better yesterday. It always is."});
+                "Everything was better yesterday. It always is.",
+                "If you're selling optimism, I'm not buying."});
         PERSONALITY_TALK.put(NpcPersonality.SLEEPY, new String[]{
                 "*yawn* Sorry, you were saying?",
                 "I had a nap planned for right about... now, actually.",
                 "Five beds. If I were rich, I'd own five beds. One for each mood.",
-                "Some people count emeralds. I count sheep. Professionally."});
+                "Some people count emeralds. I count sheep. Professionally.",
+                "Wake me for %FESTIVAL%. Or cake. Cake works."});
         PERSONALITY_TALK.put(NpcPersonality.CURIOUS, new String[]{
                 "Say, what's it like out past the %BIOME%? Tell me everything.",
                 "I found a weird rock today. It's in my pocket. Want to see? ...Maybe later.",
                 "Do you think fish know they're wet? I think about this a lot.",
-                "Every chest I see, I wonder what's inside. Every. Single. One."});
-    }
+                "Every chest I see, I wonder what's inside. Every. Single. One.",
+                "Bring me rumors. I'll trade you better rumors."});
 
-    // ------------------------------------------------------------------
-    // Job and biome small talk
-    // ------------------------------------------------------------------
-
-    private static final Map<NpcJob, String[]> JOB_SMALL_TALK = new EnumMap<>(NpcJob.class);
-    private static final Map<NpcVariant, String[]> BIOME_SMALL_TALK = new EnumMap<>(NpcVariant.class);
-
-    static {
         JOB_SMALL_TALK.put(NpcJob.FARMER, new String[]{
                 "The crops practically grow themselves this season.",
                 "A good harvest starts with good soil, I always say.",
                 "Rabbits got into the carrots again. Nature's little thieves.",
-                "I name my pumpkins. Don't tell anyone. The big one is Gerald."});
+                "I name my pumpkins. Don't tell anyone. The big one is Gerald.",
+                "%SEASON% soil has a personality. Today's is stubborn."});
         JOB_SMALL_TALK.put(NpcJob.SHEPHERD, new String[]{
                 "Wool prices are steady, thank goodness.",
                 "Sheep are better listeners than most people.",
@@ -251,7 +314,8 @@ public final class DialogueManager {
                 "Every map is a story that hasn't been walked yet.",
                 "North is a suggestion until you're lost. Then it's a religion.",
                 "I once mapped a cave so deep the ink got cold.",
-                "X marks the spot. Unless I sneezed while drawing. Then Y does."});
+                "X marks the spot. Unless I sneezed while drawing. Then Y does.",
+                "Towns show up rarer on my sketches — worth circling in red."});
         JOB_SMALL_TALK.put(NpcJob.GLASSBLOWER, new String[]{
                 "Sand plus fire plus patience equals a window. Marvelous, no?",
                 "The desert gives us sand; I give it back as art.",
@@ -291,28 +355,65 @@ public final class DialogueManager {
                 "The bog bubbles more than usual today. Interesting.",
                 "Frogsong all night long. You get used to it. Mostly.",
                 "The mist here keeps secrets. So do I."});
-    }
 
-    // ------------------------------------------------------------------
-    // Selection
-    // ------------------------------------------------------------------
+        SEASON_TALK.put(SeasonCalendar.Season.SPRING, new String[]{
+                "Spring air makes even grumps plant flowers. Allegedly.",
+                "Shoots are pushing up. Hope always looks like green sprouts.",
+                "Mud season is character-building. That's what I tell my boots."});
+        SEASON_TALK.put(SeasonCalendar.Season.SUMMER, new String[]{
+                "Long days, short tempers, tall sunflowers.",
+                "Summer laziness is a professional skill. I'm certified.",
+                "If you melt, leave a note. We'll sweep you up at dusk."});
+        SEASON_TALK.put(SeasonCalendar.Season.FALL, new String[]{
+                "Fall smells like woodsmoke and second chances.",
+                "Leaves fall. So do plans. We rake both.",
+                "Harvest tables should always have an empty plate for travelers."});
+        SEASON_TALK.put(SeasonCalendar.Season.WINTER, new String[]{
+                "Winter teaches thrift and thicker socks.",
+                "Snow makes every path a suggestion.",
+                "Come in close — cold stories need warm listeners."});
+    }
 
     public static String pickLine(BiomeNpc npc, NpcMemory.Record record, String playerName,
                                   Context context, long day, RandomSource random) {
+        return pickLine(npc, record, playerName, context, day, random, null, null);
+    }
+
+    public static String pickLine(BiomeNpc npc, NpcMemory.Record record, String playerName,
+                                  Context context, long day, RandomSource random,
+                                  ServerPlayer player, Errand activeErrand) {
         String line = switch (context) {
-            case GREETING -> pickGreeting(npc, record, day, random);
-            case SMALL_TALK -> pickSmallTalk(npc, record, random);
+            case GREETING -> pickGreeting(npc, record, day, random, player);
+            case SMALL_TALK -> pickSmallTalk(npc, record, day, random, player);
             case GIFT_FAVORITE -> pick(GIFT_FAVORITE_LINES, random);
             case GIFT_LIKED -> pick(GIFT_LIKED_LINES, random);
             case GIFT_MEH -> pick(GIFT_MEH_LINES, random);
             case GIFT_JUNK -> pick(GIFT_JUNK_LINES, random);
             case GIFT_ALREADY -> pick(GIFT_ALREADY_LINES, random);
+            case GIFT_BIRTHDAY -> pick(GIFT_BIRTHDAY_LINES, random);
             case WOKEN -> pick(WOKEN_LINES, random);
+            case HEART_EVENT -> pickHeartEvent(record, random);
+            case ERRAND_OFFER -> pick(ERRAND_OFFER_LINES, random);
+            case ERRAND_PROGRESS -> pick(ERRAND_PROGRESS_LINES, random);
+            case ERRAND_COMPLETE -> pick(ERRAND_COMPLETE_LINES, random);
+            case FESTIVAL -> pick(FESTIVAL_LINES, random);
+            case BIRTHDAY -> pick(BIRTHDAY_GREET, random);
+            case ADVENTURE_TIP -> pick(ADVENTURE_TIPS, random);
         };
-        return substitute(line, npc, playerName, record, day);
+        return substitute(line, npc, playerName, record, day, activeErrand);
     }
 
-    private static String pickGreeting(BiomeNpc npc, NpcMemory.Record record, long day, RandomSource random) {
+    private static String pickHeartEvent(NpcMemory.Record record, RandomSource random) {
+        int hearts = Hearts.fromReputation(record.reputation);
+        String[] pool = HEART_EVENTS.get(hearts);
+        if (pool == null) {
+            pool = HEART_EVENTS.get(2);
+        }
+        return pick(pool, random);
+    }
+
+    private static String pickGreeting(BiomeNpc npc, NpcMemory.Record record, long day,
+                                       RandomSource random, ServerPlayer player) {
         if (record.isStranger() || record.talks == 0) {
             return pick(FIRST_MEETING, random);
         }
@@ -322,11 +423,16 @@ public final class DialogueManager {
         if (record.lastHitDay >= 0 && day - record.lastHitDay <= 3 && record.reputation < 0) {
             return pick(HIT_RECENTLY, random);
         }
+        if (npc.isBirthday(day)) {
+            return pick(BIRTHDAY_GREET, random);
+        }
+        if (SeasonCalendar.isFestival(day) && record.moodTier() >= NpcMemory.MOOD_NEUTRAL) {
+            return pick(FESTIVAL_LINES, random);
+        }
         long daysSinceTalk = record.lastTalkDay >= 0 ? day - record.lastTalkDay : 0;
         if (daysSinceTalk >= 5 && record.moodTier() >= NpcMemory.MOOD_FRIENDLY) {
             return pick(LONG_TIME_NO_SEE, random);
         }
-        // Situational flavor for anyone who isn't upset with the player
         if (record.moodTier() >= NpcMemory.MOOD_NEUTRAL) {
             if (npc.level().isRaining() && random.nextInt(3) == 0) {
                 return pick(RAINY_DAY, random);
@@ -334,7 +440,6 @@ public final class DialogueManager {
             if (npc.level().isDarkOutside() && random.nextInt(3) == 0) {
                 return pick(NIGHT_LINES, random);
             }
-            // Gift callback: they remember generosity
             if (record.favoriteGifts > 0 && random.nextInt(5) == 0) {
                 return "You know, I still think about that %FAVORITE% you gave me, %PLAYER%.";
             }
@@ -348,11 +453,26 @@ public final class DialogueManager {
         };
     }
 
-    private static String pickSmallTalk(BiomeNpc npc, NpcMemory.Record record, RandomSource random) {
+    private static String pickSmallTalk(BiomeNpc npc, NpcMemory.Record record, long day,
+                                        RandomSource random, ServerPlayer player) {
         if (record.moodTier() == NpcMemory.MOOD_HOSTILE) {
             return pick(HOSTILE, random);
         }
-        // Relationship callbacks sprinkle in occasionally
+        // Gossip about journal friends
+        if (player != null && random.nextInt(5) == 0) {
+            PlayerEvaData data = player.getData(com.eva.evamod.registry.ModAttachments.PLAYER_DATA);
+            List<HouseIndexEntry> others = new ArrayList<>();
+            for (HouseIndexEntry e : data.houses()) {
+                if (!e.npcName().equalsIgnoreCase(npc.getNpcName())) {
+                    others.add(e);
+                }
+            }
+            if (!others.isEmpty()) {
+                HouseIndexEntry other = others.get(random.nextInt(others.size()));
+                return "Have you seen " + other.npcName() + " lately? That " + other.personality().toLowerCase(Locale.ROOT)
+                        + " " + other.job().toLowerCase(Locale.ROOT) + " owes me a story.";
+            }
+        }
         if (record.moodTier() >= NpcMemory.MOOD_CLOSE_FRIEND && random.nextInt(4) == 0) {
             List<String> callbacks = new ArrayList<>();
             if (record.trades > 0) {
@@ -362,9 +482,15 @@ public final class DialogueManager {
                 callbacks.add("That's " + record.gifts + " gifts you've given me. I keep count. Happily.");
             }
             callbacks.add("Remember when we first met? Day %FIRSTMET%. I remember everything.");
+            callbacks.add("We're at %HEARTS%. Don't let it go to your head. Or do.");
             return callbacks.get(random.nextInt(callbacks.size()));
         }
-        // Otherwise: personality, job or biome flavored chatter
+        if (random.nextInt(6) == 0) {
+            return pick(ADVENTURE_TIPS, random);
+        }
+        if (random.nextInt(4) == 0) {
+            return pick(SEASON_TALK.get(SeasonCalendar.season(day)), random);
+        }
         int roll = random.nextInt(3);
         String[] pool = switch (roll) {
             case 0 -> PERSONALITY_TALK.get(npc.getPersonality());
@@ -379,8 +505,11 @@ public final class DialogueManager {
     }
 
     private static String substitute(String line, BiomeNpc npc, String playerName,
-                                     NpcMemory.Record record, long day) {
+                                     NpcMemory.Record record, long day, Errand errand) {
         long daysSinceTalk = record.lastTalkDay >= 0 ? Math.max(0, day - record.lastTalkDay) : 0;
+        int hearts = Hearts.fromReputation(record.reputation);
+        String need = errand != null ? errand.itemDisplayName() : "supplies";
+        String count = errand != null ? Integer.toString(errand.count()) : "a few";
         return line
                 .replace("%NAME%", npc.getNpcName())
                 .replace("%JOB%", npc.getJob().getDisplayName().toLowerCase(Locale.ROOT))
@@ -389,7 +518,14 @@ public final class DialogueManager {
                 .replace("%DAYS%", Long.toString(daysSinceTalk))
                 .replace("%FIRSTMET%", Long.toString(Math.max(0, record.firstMetDay)))
                 .replace("%FAVORITE%", npc.getFavoriteGiftName())
-                .replace("%ITEM%", npc.getLastGiftName());
+                .replace("%ITEM%", npc.getLastGiftName())
+                .replace("%SEASON%", SeasonCalendar.season(day).getDisplayName())
+                .replace("%DAY%", Integer.toString(SeasonCalendar.dayInSeason(day)))
+                .replace("%FESTIVAL%", SeasonCalendar.festivalName(day))
+                .replace("%BIRTHDAY%", npc.getBirthdayLabel())
+                .replace("%HEARTS%", Hearts.shortLabel(hearts))
+                .replace("%NEED%", need)
+                .replace("%COUNT%", count);
     }
 
     private DialogueManager() {

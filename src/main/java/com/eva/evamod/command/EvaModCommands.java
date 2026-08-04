@@ -1,10 +1,18 @@
 package com.eva.evamod.command;
 
 import com.eva.evamod.EvaMod;
+import com.eva.evamod.ModVersions;
+import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.entity.BiomeNpc;
+import com.eva.evamod.friendship.Hearts;
+import com.eva.evamod.mail.MailMessage;
+import com.eva.evamod.mail.MailService;
+import com.eva.evamod.player.GuideBookService;
 import com.eva.evamod.player.HouseIndexEntry;
 import com.eva.evamod.player.PlayerEvaData;
+import com.eva.evamod.quest.Errand;
 import com.eva.evamod.registry.ModAttachments;
+import com.eva.evamod.world.HomesteadBootstrap;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -14,9 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -38,15 +43,13 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
- * Player-facing Eva Mod commands.
+ * Player-facing Eva Mod 2.0 commands.
  * <p>
- * Discovery commands ({@code locate}, {@code near}, {@code houses}) work for everyone —
- * including worlds with cheats off (common on Mac/singleplayer). Only teleport needs op.
- * Unknown/typo input is caught and answered with plain-language help instead of Brigadier's
- * cryptic "Incorrect argument" / "Unknown or incomplete command" errors.
+ * Discovery ({@code locate}, {@code town}, {@code near}, {@code journal}, {@code mail}) works
+ * without cheats. Teleport ({@code visit}, {@code town visit}) needs op/cheats and lands
+ * inside a house (bed / interior), never at Y≈0.
  */
 @EventBusSubscriber(modid = EvaMod.MODID)
 public final class EvaModCommands {
@@ -56,32 +59,50 @@ public final class EvaModCommands {
             ResourceKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_town"));
     public static final TagKey<Structure> NPC_SETTLEMENT_TAG =
             TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_house"));
+    public static final TagKey<Structure> NPC_TOWN_TAG =
+            TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "npc_town"));
 
     private static final double NEAR_RADIUS = 48.0;
-    private static final Set<UUID> TIPPED_THIS_SESSION = ConcurrentHashMap.newKeySet();
 
-    /** Known subcommands → canonical name (for typo suggestions). */
     private static final Map<String, String> COMMAND_ALIASES = Map.ofEntries(
             Map.entry("help", "help"),
             Map.entry("?", "help"),
             Map.entry("locate", "locate"),
             Map.entry("find", "locate"),
             Map.entry("search", "locate"),
+            Map.entry("town", "town"),
+            Map.entry("towns", "town"),
+            Map.entry("hamlet", "town"),
             Map.entry("near", "near"),
             Map.entry("nearby", "near"),
             Map.entry("npcs", "near"),
-            Map.entry("houses", "houses"),
-            Map.entry("house", "houses"),
-            Map.entry("homes", "houses"),
-            Map.entry("home", "houses"),
-            Map.entry("index", "houses"),
+            Map.entry("houses", "journal"),
+            Map.entry("house", "journal"),
+            Map.entry("homes", "journal"),
+            Map.entry("home", "journal"),
+            Map.entry("index", "journal"),
+            Map.entry("journal", "journal"),
             Map.entry("visit", "visit"),
             Map.entry("tp", "visit"),
             Map.entry("teleport", "visit"),
-            Map.entry("goto", "visit"));
+            Map.entry("goto", "visit"),
+            Map.entry("mail", "mail"),
+            Map.entry("letters", "mail"),
+            Map.entry("calendar", "calendar"),
+            Map.entry("season", "calendar"),
+            Map.entry("date", "calendar"),
+            Map.entry("errand", "errand"),
+            Map.entry("quest", "errand"),
+            Map.entry("book", "book"),
+            Map.entry("primer", "book"),
+            Map.entry("guide", "book"),
+            Map.entry("settle", "settle"),
+            Map.entry("found", "settle"),
+            Map.entry("homestead", "settle"),
+            Map.entry("version", "version"));
 
     private static final List<String> KNOWN_COMMANDS =
-            List.of("help", "locate", "near", "houses", "visit");
+            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book", "settle", "version");
 
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -91,18 +112,48 @@ public final class EvaModCommands {
                 .executes(ctx -> help(ctx.getSource()))
                 .then(Commands.literal("help").executes(ctx -> help(ctx.getSource())))
                 .then(Commands.literal("?").executes(ctx -> help(ctx.getSource())))
-                // Discovery — no cheats/op required (works with cheats-off worlds on any OS).
+                .then(Commands.literal("version").executes(ctx -> version(ctx.getSource())))
+                .then(Commands.literal("book")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("primer")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("guide")
+                        .executes(ctx -> book(ctx.getSource()))
+                        .then(extraArgs("book")))
+                .then(Commands.literal("settle")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
+                .then(Commands.literal("found")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
+                .then(Commands.literal("homestead")
+                        .executes(ctx -> settle(ctx.getSource()))
+                        .then(extraArgs("settle")))
                 .then(Commands.literal("locate")
-                        .executes(ctx -> locate(ctx.getSource()))
+                        .executes(ctx -> locate(ctx.getSource(), false))
                         .then(Commands.literal("reset").executes(ctx -> locateReset(ctx.getSource())))
                         .then(Commands.literal("clear").executes(ctx -> locateReset(ctx.getSource())))
                         .then(extraArgs("locate")))
                 .then(Commands.literal("find")
-                        .executes(ctx -> locate(ctx.getSource()))
+                        .executes(ctx -> locate(ctx.getSource(), false))
                         .then(extraArgs("locate")))
                 .then(Commands.literal("search")
-                        .executes(ctx -> locate(ctx.getSource()))
+                        .executes(ctx -> locate(ctx.getSource(), false))
                         .then(extraArgs("locate")))
+                .then(Commands.literal("town")
+                        .executes(ctx -> locate(ctx.getSource(), true))
+                        .then(Commands.literal("visit").executes(ctx -> visit(ctx.getSource(), true)))
+                        .then(Commands.literal("tp").executes(ctx -> visit(ctx.getSource(), true)))
+                        .then(Commands.literal("goto").executes(ctx -> visit(ctx.getSource(), true)))
+                        .then(extraArgs("town")))
+                .then(Commands.literal("towns")
+                        .executes(ctx -> locate(ctx.getSource(), true))
+                        .then(Commands.literal("visit").executes(ctx -> visit(ctx.getSource(), true))))
+                .then(Commands.literal("hamlet")
+                        .executes(ctx -> locate(ctx.getSource(), true))
+                        .then(Commands.literal("visit").executes(ctx -> visit(ctx.getSource(), true))))
                 .then(Commands.literal("near")
                         .executes(ctx -> near(ctx.getSource()))
                         .then(extraArgs("near")))
@@ -112,95 +163,146 @@ public final class EvaModCommands {
                 .then(Commands.literal("npcs")
                         .executes(ctx -> near(ctx.getSource()))
                         .then(extraArgs("near")))
+                .then(Commands.literal("journal")
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("houses")
-                        .executes(ctx -> houses(ctx.getSource()))
-                        .then(extraArgs("houses")))
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("house")
-                        .executes(ctx -> houses(ctx.getSource()))
-                        .then(extraArgs("houses")))
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("homes")
-                        .executes(ctx -> houses(ctx.getSource()))
-                        .then(extraArgs("houses")))
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("home")
-                        .executes(ctx -> houses(ctx.getSource()))
-                        .then(extraArgs("houses")))
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("index")
-                        .executes(ctx -> houses(ctx.getSource()))
-                        .then(extraArgs("houses")))
-                // Teleport — registered without .requires() so beginners see a clear message
-                // instead of Brigadier's "Incorrect argument for command".
+                        .executes(ctx -> journal(ctx.getSource()))
+                        .then(extraArgs("journal")))
                 .then(Commands.literal("visit")
-                        .executes(ctx -> visit(ctx.getSource()))
+                        .executes(ctx -> visit(ctx.getSource(), false))
+                        .then(Commands.literal("town").executes(ctx -> visit(ctx.getSource(), true)))
                         .then(extraArgs("visit")))
                 .then(Commands.literal("tp")
-                        .executes(ctx -> visit(ctx.getSource()))
+                        .executes(ctx -> visit(ctx.getSource(), false))
+                        .then(Commands.literal("town").executes(ctx -> visit(ctx.getSource(), true)))
                         .then(extraArgs("visit")))
                 .then(Commands.literal("teleport")
-                        .executes(ctx -> visit(ctx.getSource()))
+                        .executes(ctx -> visit(ctx.getSource(), false))
+                        .then(Commands.literal("town").executes(ctx -> visit(ctx.getSource(), true)))
                         .then(extraArgs("visit")))
                 .then(Commands.literal("goto")
-                        .executes(ctx -> visit(ctx.getSource()))
+                        .executes(ctx -> visit(ctx.getSource(), false))
+                        .then(Commands.literal("town").executes(ctx -> visit(ctx.getSource(), true)))
                         .then(extraArgs("visit")))
-                // Catch typos / leftover junk ("/evamod locatee", "/evamod loc ate", etc.).
+                .then(Commands.literal("mail")
+                        .executes(ctx -> mail(ctx.getSource()))
+                        .then(extraArgs("mail")))
+                .then(Commands.literal("letters")
+                        .executes(ctx -> mail(ctx.getSource()))
+                        .then(extraArgs("mail")))
+                .then(Commands.literal("calendar")
+                        .executes(ctx -> calendar(ctx.getSource()))
+                        .then(extraArgs("calendar")))
+                .then(Commands.literal("season")
+                        .executes(ctx -> calendar(ctx.getSource()))
+                        .then(extraArgs("calendar")))
+                .then(Commands.literal("date")
+                        .executes(ctx -> calendar(ctx.getSource()))
+                        .then(extraArgs("calendar")))
+                .then(Commands.literal("errand")
+                        .executes(ctx -> errand(ctx.getSource()))
+                        .then(extraArgs("errand")))
+                .then(Commands.literal("quest")
+                        .executes(ctx -> errand(ctx.getSource()))
+                        .then(extraArgs("errand")))
                 .then(Commands.argument("unknown", StringArgumentType.greedyString())
                         .executes(ctx -> unknownInput(
                                 ctx.getSource(), StringArgumentType.getString(ctx, "unknown"))));
 
         LiteralCommandNode<CommandSourceStack> root = dispatcher.register(rootBuilder);
-        // Short + common mistypes (keyboard / OCR / autocorrect).
         dispatcher.register(Commands.literal("eva").redirect(root));
         dispatcher.register(Commands.literal("evanod").redirect(root));
         dispatcher.register(Commands.literal("evamood").redirect(root));
         dispatcher.register(Commands.literal("eva-mod").redirect(root));
     }
 
-    /** One short tip after login so beginners know the command exists on any OS. */
-    @SubscribeEvent
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        if (!TIPPED_THIS_SESSION.add(player.getUUID())) {
-            return;
-        }
-        MutableComponent tip = Component.literal("Eva Mod: press ")
-                .withStyle(ChatFormatting.GRAY)
-                .append(Component.literal("T").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(" for chat, then type ").withStyle(ChatFormatting.GRAY))
-                .append(suggestCommand("/evamod", "Show Eva Mod help"))
-                .append(Component.literal(" — works without cheats. Talk to Biome Villagers to meet them.")
-                        .withStyle(ChatFormatting.GRAY));
-        player.sendSystemMessage(tip);
-    }
-
     private static int help(CommandSourceStack source) {
-        source.sendSuccess(() -> Component.literal("Eva Mod — beginner guide")
+        source.sendSuccess(() -> Component.literal("Eva Mod " + ModVersions.DISPLAY + " — " + ModVersions.CODENAME)
                 .withStyle(ChatFormatting.GOLD), false);
-        source.sendSuccess(() -> Component.literal("Open chat with T (same on Mac, Windows, Linux), then type a command below.")
+        source.sendSuccess(() -> Component.literal("Open your Homestead Primer book, or type a command below.")
                 .withStyle(ChatFormatting.GRAY), false);
         source.sendSuccess(() -> line(
+                suggestCommand("/evamod book", "Get Homestead Primer"),
+                Component.literal(" — get the command primer book")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod town", "Find nearest town"),
+                Component.literal(" — find the nearest multi-NPC town (no cheats)")), false);
+        source.sendSuccess(() -> line(
                 suggestCommand("/evamod locate", "Find next house/town"),
-                Component.literal(" — find the next nearest house/town (no cheats needed)")), false);
+                Component.literal(" — find the next nearest house or town")), false);
         source.sendSuccess(() -> line(
-                suggestCommand("/evamod locate reset", "Clear locate skip list"),
-                Component.literal(" — clear the locate skip list")), false);
+                suggestCommand("/evamod settle", "Founder's Homestead"),
+                Component.literal(" — plant one starter home (pre-mod / explored worlds)")), false);
         source.sendSuccess(() -> line(
-                suggestCommand("/evamod near", "List nearby NPCs"),
-                Component.literal(" — list Biome NPCs near you")), false);
-        source.sendSuccess(() -> line(
-                suggestCommand("/evamod houses", "Show house index"),
-                Component.literal(" — houses of NPCs you have talked to")), false);
+                suggestCommand("/evamod town visit", "Teleport into a town house"),
+                Component.literal(" — teleport inside a town house (needs cheats)")), false);
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod visit", "Teleport to nearest settlement"),
-                Component.literal(" — teleport to a nearby settlement (needs cheats/op)")), false);
-        source.sendSuccess(() -> Component.literal("Tip: if a command says it needs cheats, open to LAN and enable Allow Cheats, or recreate the world with cheats on.")
-                .withStyle(ChatFormatting.DARK_GRAY), false);
-        source.sendSuccess(() -> Component.literal("Also works: /eva  |  shortcuts: find, nearby, homes, tp")
+                Component.literal(" — teleport into a house (bed/interior, needs cheats)")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod journal", "Open homestead journal"),
+                Component.literal(" — friends, hearts, birthdays")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod mail", "Read NPC letters"),
+                Component.literal(" — letters from NPCs")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod calendar", "Show season & festival"),
+                Component.literal(" — season, date, festival")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod errand", "Show active errand"),
+                Component.literal(" — your active help-wanted errand")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod near", "List nearby NPCs"),
+                Component.literal(" — NPCs near you")), false);
+        source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
                 .withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
 
-    private static int locate(CommandSourceStack source) {
+    private static int version(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("Eva Mod " + ModVersions.DISPLAY + " " + ModVersions.CODENAME
+                        + " (Minecraft 26.2) · player schema " + ModVersions.PLAYER_SCHEMA
+                        + " · world schema " + ModVersions.WORLD_SCHEMA)
+                .withStyle(ChatFormatting.AQUA), false);
+        source.sendSuccess(() -> Component.literal("Supported from " + ModVersions.MIN_SUPPORTED_DISPLAY
+                        + ". Versions 1.0–1.1.x are outdated and unsupported.")
+                .withStyle(ChatFormatting.GRAY), false);
+        return 1;
+    }
+
+    private static int book(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        GuideBookService.giveAnother(player);
+        source.sendSuccess(() -> Component.literal("Homestead Primer added to your inventory (or dropped nearby).")
+                .withStyle(ChatFormatting.GREEN), false);
+        return 1;
+    }
+
+    private static int settle(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        return HomesteadBootstrap.settle(player);
+    }
+
+    private static int locate(CommandSourceStack source, boolean townsOnly) {
         ServerPlayer player = requirePlayer(source);
         if (player == null) {
             return 0;
@@ -211,41 +313,44 @@ public final class EvaModCommands {
                         "Already searching — wait a moment, or run /evamod locate reset to cancel."));
                 return 0;
             }
-            if (!structuresAvailable(player.level())) {
+            if (!structuresAvailable(player.level(), townsOnly)) {
                 source.sendFailure(Component.literal(
-                        "Eva Mod houses are not loaded in this world. Make sure the mod is installed on the server/world and you are in the Overworld."));
+                        "Eva Mod settlements are not loaded in this world. Make sure the mod is installed and you are in the Overworld."));
                 return 0;
             }
             ServerLevel level = player.level();
             PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
-            SettlementLocator.LocateResult found = SettlementLocator.tryInstant(level, player.blockPosition(), data);
+            SettlementLocator.LocateResult found = SettlementLocator.tryInstant(level, player.blockPosition(), data, townsOnly);
             if (found != null) {
                 data.rememberLocated(found.pos());
                 player.setData(ModAttachments.PLAYER_DATA, data.copy());
                 SettlementLocator.rememberWorldCache(level, found);
+                BlockPos land = SettlementLocator.safeInteriorTeleportPos(level, found.pos(), found.town());
                 String label = found.town() ? "npc_town (hamlet)" : "npc_house";
                 int npcHint = found.town()
                         ? SettlementLocator.countNpcsNear(level, found.pos(), 48)
                         : SettlementLocator.countNpcsNear(level, found.pos(), 16);
                 source.sendSuccess(() -> {
-                    var msg = Component.literal("Found " + label + " at ").withStyle(ChatFormatting.GREEN);
-                    msg = SettlementLocator.clickablePos(msg, found.pos());
+                    var msg = Component.literal("Found " + label + " — safe landing ").withStyle(ChatFormatting.GREEN);
+                    msg = SettlementLocator.clickablePos(msg, land);
                     if (found.town()) {
                         msg.append(Component.literal(npcHint > 0
                                         ? " — town with " + npcHint + " NPC(s) nearby"
                                         : " — multi-NPC hamlet")
                                 .withStyle(ChatFormatting.GRAY));
                     }
-                    msg.append(Component.literal("  (run again for the next one; /evamod visit to teleport if cheats are on)")
+                    String visitCmd = found.town() ? "/evamod town visit" : "/evamod visit";
+                    msg.append(Component.literal("  (run again for the next one; " + visitCmd + " if cheats are on)")
                             .withStyle(ChatFormatting.DARK_GRAY));
                     return msg;
                 }, false);
                 return 1;
             }
-            source.sendSuccess(() -> Component.literal(
-                            "No settlement in loaded chunks — searching the nearby world. This can take a few seconds…")
+            source.sendSuccess(() -> Component.literal(townsOnly
+                            ? "No town in loaded chunks — searching the nearby world…"
+                            : "No settlement in loaded chunks — searching the nearby world…")
                     .withStyle(ChatFormatting.YELLOW), false);
-            SettlementLocator.startSearch(player, data);
+            SettlementLocator.startSearch(player, data, townsOnly);
             return 1;
         } catch (Exception e) {
             EvaMod.LOGGER.error("/evamod locate failed for {}", player.getGameProfile().name(), e);
@@ -265,7 +370,7 @@ public final class EvaModCommands {
         data.resetLocated();
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
         source.sendSuccess(() -> Component.literal(
-                        "Locate skip list cleared (and any search cancelled). Your house index is unchanged. Try /evamod locate again.")
+                        "Locate skip list cleared. Try /evamod town or /evamod locate again.")
                 .withStyle(ChatFormatting.GREEN), false);
         return 1;
     }
@@ -282,16 +387,18 @@ public final class EvaModCommands {
             if (npcs.isEmpty()) {
                 source.sendSuccess(() -> Component.literal(
                                 "No Biome NPCs within " + (int) NEAR_RADIUS
-                                        + " blocks. Try /evamod locate to find a house, then walk there and talk to them.")
+                                        + " blocks. Try /evamod town to find a hamlet.")
                         .withStyle(ChatFormatting.YELLOW), false);
                 return 0;
             }
             source.sendSuccess(() -> Component.literal("Nearby NPCs (" + npcs.size() + "):")
                     .withStyle(ChatFormatting.GOLD), false);
+            long day = player.level().getOverworldClockTime() / 24000L;
             for (BiomeNpc npc : npcs.stream().limit(12).toList()) {
+                int hearts = Hearts.fromReputation(npc.getMemory().get(player.getUUID(), day).reputation);
                 BlockPos pos = npc.blockPosition();
-                String line = npc.getNpcName() + " — " + npc.getPersonality().getDisplayName()
-                        + " " + npc.getJob().getDisplayName();
+                String line = npc.getNpcName() + " " + Hearts.bar(hearts) + " — "
+                        + npc.getPersonality().getDisplayName() + " " + npc.getJob().getDisplayName();
                 source.sendSuccess(() -> SettlementLocator.clickablePos(Component.literal(line + " @ "), pos), false);
             }
             return npcs.size();
@@ -302,73 +409,154 @@ public final class EvaModCommands {
         }
     }
 
-    private static int houses(CommandSourceStack source) {
+    private static int journal(CommandSourceStack source) {
         ServerPlayer player = requirePlayer(source);
         if (player == null) {
             return 0;
         }
         List<HouseIndexEntry> houses = player.getData(ModAttachments.PLAYER_DATA).houses();
         if (houses.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("House index empty — right-click Biome Villagers to meet them.")
+            source.sendSuccess(() -> Component.literal("Journal empty — right-click Biome Villagers to meet them.")
                     .withStyle(ChatFormatting.YELLOW), false);
             source.sendSuccess(() -> line(
-                    Component.literal("Need a house first? ").withStyle(ChatFormatting.GRAY),
-                    suggestCommand("/evamod locate", "Find next house/town")), false);
+                    Component.literal("Need a town? ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod town", "Find nearest town")), false);
             return 0;
         }
-        source.sendSuccess(() -> Component.literal("House Index (" + houses.size() + "):")
+        source.sendSuccess(() -> Component.literal("Homestead Journal (" + houses.size() + " friends):")
                 .withStyle(ChatFormatting.GOLD), false);
         for (HouseIndexEntry entry : houses) {
-            String label = entry.npcName() + " — " + entry.personality() + " " + entry.biome()
-                    + " " + entry.job() + " @ ";
+            String label = entry.npcName() + " " + Hearts.bar(entry.hearts())
+                    + " — " + entry.personality() + " " + entry.biome() + " " + entry.job()
+                    + " · birthday " + entry.birthday() + " @ ";
             source.sendSuccess(() -> SettlementLocator.clickablePos(Component.literal(label), entry.homePos()), false);
         }
         return houses.size();
     }
 
-    private static int visit(CommandSourceStack source) {
+    private static int visit(CommandSourceStack source, boolean townsOnly) {
         ServerPlayer player = requirePlayer(source);
         if (player == null) {
             return 0;
         }
         if (!Commands.LEVEL_GAMEMASTERS.check(source.permissions())) {
             source.sendFailure(Component.literal(
-                    "Teleport needs cheats or op. On singleplayer: Open to LAN → Allow Cheats → Start LAN World, then try again."));
+                    "Teleport needs cheats or op. On singleplayer: Open to LAN → Allow Cheats → Start LAN World."));
             source.sendSuccess(() -> line(
                     Component.literal("No cheats? Use ").withStyle(ChatFormatting.GRAY),
-                    suggestCommand("/evamod locate", "Find next house/town"),
-                    Component.literal(" for coordinates instead.").withStyle(ChatFormatting.GRAY)), false);
+                    suggestCommand(townsOnly ? "/evamod town" : "/evamod locate", "Find settlement"),
+                    Component.literal(" for safe landing coordinates.").withStyle(ChatFormatting.GRAY)), false);
             return 0;
         }
         try {
             ServerLevel level = player.level();
             PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
-            SettlementLocator.LocateResult found = SettlementLocator.tryInstant(level, player.blockPosition(), data);
+            SettlementLocator.LocateResult found = SettlementLocator.tryInstant(level, player.blockPosition(), data, townsOnly);
             if (found == null) {
-                BlockPos hit = level.findNearestMapStructure(NPC_SETTLEMENT_TAG, player.blockPosition(), 64, false);
+                BlockPos hit = level.findNearestMapStructure(
+                        townsOnly ? NPC_TOWN_TAG : NPC_SETTLEMENT_TAG, player.blockPosition(), 96, false);
                 if (hit == null) {
-                    source.sendFailure(Component.literal(
-                            "No npc_house/npc_town nearby yet. Run /evamod locate first (works without cheats), wait for a result, then visit."));
+                    source.sendFailure(Component.literal(townsOnly
+                            ? "No npc_town nearby yet. Run /evamod town first, wait for a result, then visit."
+                            : "No settlement nearby yet. Run /evamod locate or /evamod town first."));
                     return 0;
                 }
                 found = SettlementLocator.refineResult(level, hit);
+                if (townsOnly && !found.town()) {
+                    source.sendFailure(Component.literal(
+                            "Found a solitary house, not a town. Try /evamod town to search specifically for hamlets."));
+                    return 0;
+                }
             }
             SettlementLocator.rememberWorldCache(level, found);
-            BlockPos land = SettlementLocator.safeTeleportPos(level, found.pos());
+            BlockPos land = SettlementLocator.safeInteriorTeleportPos(level, found.pos(), found.town() || townsOnly);
             player.teleportTo(land.getX() + 0.5, land.getY(), land.getZ() + 0.5);
             BlockPos finalLand = land;
+            String where = found.town() ? "town house" : "house";
             source.sendSuccess(() -> SettlementLocator.clickablePos(
-                    Component.literal("Visited settlement at ").withStyle(ChatFormatting.AQUA), finalLand), false);
+                    Component.literal("Visited " + where + " interior at ").withStyle(ChatFormatting.AQUA), finalLand), false);
             return 1;
         } catch (Exception e) {
             EvaMod.LOGGER.error("/evamod visit failed for {}", player.getGameProfile().name(), e);
             source.sendFailure(Component.literal(
-                    "Teleport failed. Try /evamod locate for coordinates, or enable cheats and retry."));
+                    "Teleport failed. Try /evamod town for coordinates, or enable cheats and retry."));
             return 0;
         }
     }
 
-    /** Absorb trailing junk under a known command so Brigadier never shows "Incorrect argument". */
+    private static int mail(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        MailService.tryDeliver(player);
+        data = player.getData(ModAttachments.PLAYER_DATA);
+        List<MailMessage> letters = data.mail();
+        if (letters.isEmpty()) {
+            source.sendSuccess(() -> Component.literal(
+                            "Mailbox empty. Meet NPCs, raise hearts, and check back — birthdays and festivals bring letters.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Mailbox (" + letters.size() + "):")
+                .withStyle(ChatFormatting.GOLD), false);
+        for (MailMessage letter : letters.stream().limit(8).toList()) {
+            ChatFormatting color = letter.read() ? ChatFormatting.GRAY : ChatFormatting.YELLOW;
+            source.sendSuccess(() -> Component.literal(
+                            (letter.read() ? "· " : "✉ ") + letter.from() + " — " + letter.subject())
+                    .withStyle(color), false);
+            source.sendSuccess(() -> Component.literal("  " + letter.body())
+                    .withStyle(ChatFormatting.WHITE), false);
+        }
+        data.markAllMailRead();
+        player.setData(ModAttachments.PLAYER_DATA, data.copy());
+        return letters.size();
+    }
+
+    private static int calendar(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        long day = player != null
+                ? player.level().getOverworldClockTime() / 24000L
+                : source.getLevel().getOverworldClockTime() / 24000L;
+        source.sendSuccess(() -> Component.literal("Today is " + SeasonCalendar.formatDate(day))
+                .withStyle(ChatFormatting.GOLD), false);
+        if (SeasonCalendar.isFestival(day)) {
+            source.sendSuccess(() -> Component.literal("Festival today: " + SeasonCalendar.festivalName(day) + "!")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE), false);
+        } else {
+            int until = SeasonCalendar.FESTIVAL_DAY - SeasonCalendar.dayInSeason(day);
+            if (until < 0) {
+                until += SeasonCalendar.DAYS_PER_SEASON;
+            }
+            int finalUntil = until;
+            source.sendSuccess(() -> Component.literal(
+                            "Next festival (" + SeasonCalendar.festivalName(day + finalUntil) + ") in "
+                                    + finalUntil + " day(s).")
+                    .withStyle(ChatFormatting.GRAY), false);
+        }
+        return 1;
+    }
+
+    private static int errand(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        Errand errand = player.getData(ModAttachments.PLAYER_DATA).activeErrand();
+        if (errand == null || errand.completed()) {
+            source.sendSuccess(() -> Component.literal(
+                            "No active errand. Talk to friendly NPCs (2+ hearts) and press Help in dialogue.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Active errand: " + errand.describe())
+                .withStyle(ChatFormatting.GREEN), false);
+        source.sendSuccess(() -> Component.literal("Reward: +" + errand.rewardRep() + " friendship when delivered.")
+                .withStyle(ChatFormatting.GRAY), false);
+        return 1;
+    }
+
     private static RequiredArgumentBuilder<CommandSourceStack, String> extraArgs(String canonical) {
         return Commands.argument("extra", StringArgumentType.greedyString())
                 .executes(ctx -> {
@@ -382,10 +570,18 @@ public final class EvaModCommands {
                 "Almost — Eva Mod does not take extra words after the command."));
         if ("locate".equals(canonical)) {
             source.sendSuccess(() -> line(
-                    Component.literal("Try exactly: ").withStyle(ChatFormatting.GRAY),
+                    Component.literal("Try: ").withStyle(ChatFormatting.GRAY),
                     suggestCommand("/evamod locate", "Find next house/town"),
                     Component.literal(" or ").withStyle(ChatFormatting.GRAY),
                     suggestCommand("/evamod locate reset", "Clear locate skip list")), false);
+            return;
+        }
+        if ("town".equals(canonical)) {
+            source.sendSuccess(() -> line(
+                    Component.literal("Try: ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod town", "Find nearest town"),
+                    Component.literal(" or ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod town visit", "Teleport into town house")), false);
             return;
         }
         source.sendSuccess(() -> line(
@@ -398,18 +594,14 @@ public final class EvaModCommands {
         if (cleaned.isEmpty()) {
             return help(source);
         }
-
-        // "/evamod locate reset" style extras already handled by tree; here we get leftovers.
         String[] parts = cleaned.split("\\s+");
         String head = parts[0];
         String canonical = COMMAND_ALIASES.get(head);
         if (canonical != null) {
-            // User typed a known word but with trailing junk, e.g. "locate please"
             source.sendFailure(Component.literal(
                     "Almost — Eva Mod does not take extra words after the command."));
             return suggestCanonical(source, canonical, parts);
         }
-
         String suggestion = closestCommand(head);
         source.sendFailure(Component.literal("Unknown Eva Mod command: \"" + head + "\""));
         if (suggestion != null) {
@@ -434,6 +626,13 @@ public final class EvaModCommands {
                     suggestCommand("/evamod locate reset", "Clear locate skip list")), false);
             return 0;
         }
+        if ("town".equals(canonical) && parts.length >= 2
+                && (parts[1].equals("visit") || parts[1].equals("tp") || parts[1].equals("goto"))) {
+            source.sendSuccess(() -> line(
+                    Component.literal("Try exactly: ").withStyle(ChatFormatting.GRAY),
+                    suggestCommand("/evamod town visit", "Teleport into town house")), false);
+            return 0;
+        }
         source.sendSuccess(() -> line(
                 Component.literal("Try exactly: ").withStyle(ChatFormatting.GRAY),
                 suggestCommand("/evamod " + canonical, "Run /evamod " + canonical)), false);
@@ -450,9 +649,14 @@ public final class EvaModCommands {
         return player;
     }
 
-    private static boolean structuresAvailable(ServerLevel level) {
+    private static boolean structuresAvailable(ServerLevel level, boolean townsOnly) {
         try {
-            level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(NPC_HOUSE);
+            var lookup = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+            if (townsOnly) {
+                lookup.getOrThrow(NPC_TOWN);
+            } else {
+                lookup.getOrThrow(NPC_HOUSE);
+            }
             return true;
         } catch (Exception e) {
             return false;
@@ -463,7 +667,6 @@ public final class EvaModCommands {
         if (raw == null) {
             return "";
         }
-        // Strip zero-width / non-breaking / smart punctuation beginners paste from phones/docs.
         String s = raw
                 .replace('\u00A0', ' ')
                 .replace('\u200B', ' ')
@@ -476,7 +679,6 @@ public final class EvaModCommands {
                 .replace('’', ' ')
                 .trim()
                 .toLowerCase(Locale.ROOT);
-        // Collapse whitespace.
         return s.replaceAll("\\s+", " ");
     }
 
@@ -485,14 +687,12 @@ public final class EvaModCommands {
         int bestDist = Integer.MAX_VALUE;
         for (String cmd : KNOWN_COMMANDS) {
             int dist = levenshtein(input, cmd);
-            // Tight threshold so short junk does not false-suggest.
             int max = Math.max(1, cmd.length() / 3);
             if (dist <= max && dist < bestDist) {
                 bestDist = dist;
                 best = cmd;
             }
         }
-        // Prefix / contains soft match for partial typing.
         if (best == null) {
             for (String cmd : KNOWN_COMMANDS) {
                 if (cmd.startsWith(input) || input.startsWith(cmd) || cmd.contains(input)) {

@@ -3,234 +3,203 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Eva Mod &mdash; Homestead</title>
-  <meta name="description" content="Download Eva Mod 2.1 Homestead &mdash; biome NPCs for Minecraft NeoForge 26.2." />
-  <meta name="theme-color" content="#B7D4C4" />
+  <title>Eva Mod</title>
+  <meta name="description" content="Eva Mod Homestead — biome NPCs for Minecraft NeoForge 26.2." />
+  <meta name="theme-color" content="#E8DFD6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
-  <header class="mini-nav" id="mini-nav">
-    <a class="mini-brand" href="#top">Eva Mod</a>
+  <header class="topbar" id="topbar">
+    <a class="topbar-brand" href="#top">Eva Mod</a>
     <nav aria-label="Page">
-      <a href="#versions" data-nav="versions">Versions</a>
+      <a href="#archive" data-nav="archive">Archive</a>
       <a href="#install" data-nav="install">Install</a>
+      <a class="topbar-cta" href="https://github.com/developer-az/eva-mod/releases/download/v2.1.0-mc26.2/evamod-2.1.0.jar" download>Download</a>
     </nav>
   </header>
 
-  <div class="atmosphere" aria-hidden="true">
-    <span class="blob blob-a"></span>
-    <span class="blob blob-b"></span>
-  </div>
-
   <main>
     <section class="hero" id="top">
-      <div class="hero-copy">
-        <p class="brand">Eva Mod</p>
-        <h1>Biome NPCs who feel like neighbors</h1>
-        <p class="lede">Homestead 2.1 &mdash; towns, hearts, seasons, a guide book, and cozy houses that remember you.</p>
-        <div class="cta-group">
-          <a
-            class="btn btn-primary"
-            href="https://github.com/developer-az/eva-mod/releases/download/v2.1.0-mc26.2/evamod-2.1.0.jar"
-            download
-          >Download 2.1.0 for Minecraft 26.2</a>
-          <a class="btn btn-ghost" href="#versions">All versions</a>
-        </div>
-        <p class="cta-sub">Latest 2.1.0 Homestead &middot; needs NeoForge for Minecraft 26.2 &middot; 1.x outdated</p>
-      </div>
-
-      <div class="hero-art" aria-hidden="true">
-        <svg class="scene" viewBox="0 0 640 480" role="img" focusable="false">
+      <div class="hero-stage" aria-hidden="true">
+        <svg class="hero-scene" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" role="img" focusable="false">
           <defs>
-            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FDE8F0" />
-              <stop offset="55%" stop-color="#E8F5EE" />
-              <stop offset="100%" stop-color="#D7EEDF" />
+            <linearGradient id="sky" x1="0" y1="0" x2="0.2" y2="1">
+              <stop offset="0%" stop-color="#F3E7DE" />
+              <stop offset="45%" stop-color="#EAD5C8" />
+              <stop offset="100%" stop-color="#C9D5C4" />
             </linearGradient>
-            <linearGradient id="hillA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#A9CDB8" />
-              <stop offset="100%" stop-color="#8FB89E" />
+            <linearGradient id="hillFar" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#B7C7B2" />
+              <stop offset="100%" stop-color="#9BB09A" />
             </linearGradient>
-            <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#C7E3D2" />
-              <stop offset="100%" stop-color="#A9CDB8" />
+            <linearGradient id="hillNear" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8FA68A" />
+              <stop offset="100%" stop-color="#6F8A6C" />
             </linearGradient>
             <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#F2A8B8" />
-              <stop offset="100%" stop-color="#E88A9E" />
+              <stop offset="0%" stop-color="#C97B7B" />
+              <stop offset="100%" stop-color="#A85C5C" />
+            </linearGradient>
+            <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(40,32,28,0.18)" />
+              <stop offset="55%" stop-color="rgba(40,32,28,0.42)" />
+              <stop offset="100%" stop-color="rgba(40,32,28,0.62)" />
             </linearGradient>
           </defs>
-          <rect width="640" height="480" fill="url(#sky)" />
-          <g class="motion-layer clouds">
-            <ellipse cx="120" cy="86" rx="54" ry="24" fill="#fff7fb" opacity="0.9" />
-            <ellipse cx="158" cy="86" rx="36" ry="18" fill="#fff7fb" opacity="0.9" />
-            <ellipse cx="470" cy="70" rx="60" ry="26" fill="#fff7fb" opacity="0.85" />
-            <ellipse cx="510" cy="72" rx="38" ry="18" fill="#fff7fb" opacity="0.85" />
+          <rect width="1440" height="900" fill="url(#sky)" />
+          <g class="motion-clouds">
+            <ellipse cx="220" cy="150" rx="90" ry="36" fill="#FFF8F2" opacity="0.55" />
+            <ellipse cx="290" cy="148" rx="56" ry="26" fill="#FFF8F2" opacity="0.5" />
+            <ellipse cx="1080" cy="120" rx="110" ry="40" fill="#FFF8F2" opacity="0.45" />
+            <ellipse cx="1160" cy="124" rx="64" ry="28" fill="#FFF8F2" opacity="0.4" />
           </g>
-          <path d="M0 310 C90 250 170 250 260 290 C340 325 420 250 520 275 C580 292 620 300 640 305 L640 480 L0 480 Z" fill="url(#hillB)" />
-          <path d="M0 360 C120 310 220 320 320 350 C420 380 500 330 640 355 L640 480 L0 480 Z" fill="url(#hillA)" />
-          <g>
-            <rect x="250" y="268" width="120" height="90" rx="10" fill="#FFF6F0" />
-            <path d="M240 274 L310 214 L380 274 Z" fill="url(#roof)" />
-            <rect x="296" y="300" width="28" height="48" rx="6" fill="#D7A07A" />
-            <rect x="268" y="288" width="22" height="22" rx="5" fill="#B8D9E8" />
-            <rect x="330" y="288" width="22" height="22" rx="5" fill="#B8D9E8" />
-            <circle cx="318" cy="324" r="2.5" fill="#F7D6A8" />
-            <ellipse cx="232" cy="320" rx="14" ry="28" fill="#7BA88A" />
-            <ellipse cx="390" cy="325" rx="16" ry="30" fill="#8FB89E" />
+          <path d="M0 520 C180 430 340 450 520 510 C720 580 900 440 1140 490 C1280 520 1380 540 1440 550 L1440 900 L0 900 Z" fill="url(#hillFar)" />
+          <path d="M0 620 C220 540 420 560 640 610 C860 660 1040 560 1440 600 L1440 900 L0 900 Z" fill="url(#hillNear)" />
+          <g transform="translate(590 430)">
+            <rect x="0" y="70" width="260" height="170" fill="#F7EFE6" />
+            <path d="M-20 78 L130 -20 L280 78 Z" fill="url(#roof)" />
+            <rect x="105" y="140" width="50" height="100" fill="#8B5E45" />
+            <rect x="40" y="110" width="42" height="42" fill="#A8C4D4" />
+            <rect x="178" y="110" width="42" height="42" fill="#A8C4D4" />
           </g>
-          <g>
-            <ellipse cx="168" cy="372" rx="22" ry="8" fill="#7BA88A" opacity="0.25" />
-            <circle cx="168" cy="330" r="22" fill="#F7C9D4" />
-            <ellipse cx="168" cy="362" rx="18" ry="22" fill="#FFE8EE" />
-            <circle cx="160" cy="328" r="2.2" fill="#5A4650" />
-            <circle cx="176" cy="328" r="2.2" fill="#5A4650" />
-            <path d="M160 338 Q168 344 176 338" stroke="#C97B8E" stroke-width="2" fill="none" stroke-linecap="round" />
-            <path d="M150 318 Q168 300 186 318" fill="#A9CDB8" />
+          <g class="motion-folk" transform="translate(420 620)">
+            <circle cx="0" cy="-36" r="28" fill="#E8B4AE" />
+            <ellipse cx="0" cy="8" rx="24" ry="30" fill="#F4E4DC" />
+            <circle cx="-9" cy="-38" r="2.5" fill="#2C2420" />
+            <circle cx="9" cy="-38" r="2.5" fill="#2C2420" />
+            <path d="M-10 -24 Q0 -16 10 -24" stroke="#9A5F58" stroke-width="2.5" fill="none" stroke-linecap="round" />
           </g>
-          <g>
-            <ellipse cx="470" cy="378" rx="22" ry="8" fill="#7BA88A" opacity="0.25" />
-            <circle cx="470" cy="336" r="22" fill="#C9E4F0" />
-            <ellipse cx="470" cy="368" rx="18" ry="22" fill="#EAF6FB" />
-            <circle cx="462" cy="334" r="2.2" fill="#5A4650" />
-            <circle cx="478" cy="334" r="2.2" fill="#5A4650" />
-            <path d="M462 344 Q470 350 478 344" stroke="#7AA0B4" stroke-width="2" fill="none" stroke-linecap="round" />
-            <path d="M452 324 Q470 306 488 324" fill="#F2A8B8" />
+          <g class="motion-folk motion-folk-b" transform="translate(980 640)">
+            <circle cx="0" cy="-36" r="28" fill="#B7D0D9" />
+            <ellipse cx="0" cy="8" rx="24" ry="30" fill="#E8F1F4" />
+            <circle cx="-9" cy="-38" r="2.5" fill="#2C2420" />
+            <circle cx="9" cy="-38" r="2.5" fill="#2C2420" />
+            <path d="M-10 -24 Q0 -16 10 -24" stroke="#5E7E8A" stroke-width="2.5" fill="none" stroke-linecap="round" />
           </g>
-          <g class="motion-layer heart">
-            <path d="M318 168 C318 158 328 152 336 158 C344 152 354 158 354 168 C354 182 336 194 336 194 C336 194 318 182 318 168 Z" fill="#F2A8B8" opacity="0.9" />
-          </g>
+          <rect width="1440" height="900" fill="url(#veil)" />
         </svg>
+      </div>
+
+      <div class="hero-copy">
+        <p class="brand">Eva Mod</p>
+        <h1>Neighbors for your world</h1>
+        <p class="lede">Homestead 2.1 — soft biome folk, towns, and memory. Made to last.</p>
+        <div class="cta-group">
+          <a
+            class="btn btn-solid"
+            href="https://github.com/developer-az/eva-mod/releases/download/v2.1.0-mc26.2/evamod-2.1.0.jar"
+            download
+          >Download 2.1.0</a>
+          <a class="btn btn-line" href="#archive">Archive</a>
+        </div>
       </div>
     </section>
 
-    <section class="versions" id="versions">
+    <section class="strip reveal" aria-label="Release note">
+      <p><span>2.1.0 Homestead</span> Minecraft 26.2 · NeoForge · 1.x retired</p>
+    </section>
+
+    <section class="archive" id="archive">
       <div class="section-head reveal">
-        <h2>Versions</h2>
+        <p class="eyebrow">Archive</p>
+        <h2>Releases</h2>
       </div>
 
-      <ul class="version-list">
-        <li class="version-item version-item--latest reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 2.1.0</h3>
-              <span class="badge-latest">Latest</span>
-            </div>
-            <p class="mc-for">Homestead &middot; For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Town command &amp; safe TP, guide book, Founder's Homestead for pre-mod worlds, hearts, seasons, birthdays, errands, mail.</p>
+      <ul class="release-list">
+        <li class="release release--current reveal">
+          <div class="release-meta">
+            <p class="release-name">2.1.0 <em>Homestead</em></p>
+            <p class="release-for">Minecraft 26.2 · NeoForge</p>
+            <p class="release-note">Towns, guide book, Founder’s Homestead, hearts, seasons, birthdays, errands.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v2.1.0-mc26.2/evamod-2.1.0.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-solid btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v2.1.0-mc26.2/evamod-2.1.0.jar" download>Get jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.1.4</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Outdated &mdash; use 2.1.0+. Known locate/teleport bugs.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.1.4 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 26.2</p>
+            <p class="release-note">Use 2.1.0+. Locate and teleport issues.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.4-mc26.2/evamod-1.1.4.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.4-mc26.2/evamod-1.1.4.jar" download>Jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.1.3</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Outdated &mdash; door pathing, towns; prefer 2.1.0.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.1.3 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 26.2</p>
+            <p class="release-note">Towns and pathing — superseded.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.3-mc26.2/evamod-1.1.3.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.3-mc26.2/evamod-1.1.3.jar" download>Jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.1.2</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Outdated &mdash; dialogue/trade UI polish.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.1.2 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 26.2</p>
+            <p class="release-note">UI polish era.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.2-mc26.2/evamod-1.1.2.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.2-mc26.2/evamod-1.1.2.jar" download>Jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.1.1</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Outdated &mdash; earlier 26.2 hotfix.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.1.1 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 26.2</p>
+            <p class="release-note">Early 26.2 hotfix.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.1-mc26.2/evamod-1.1.1.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.1-mc26.2/evamod-1.1.1.jar" download>Jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.1.0</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 26.2</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 26.2</p>
-            <p class="version-note">Outdated &mdash; first 26.2 port.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.1.0 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 26.2</p>
+            <p class="release-note">First 26.2 port.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.0-mc26.2/evamod-1.1.0.jar" download>Download 26.2 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.1.0-mc26.2/evamod-1.1.0.jar" download>Jar</a>
         </li>
 
-        <li class="version-item reveal">
-          <div class="version-meta">
-            <div class="version-title">
-              <h3>Eva Mod 1.0.0</h3>
-              <span class="badge-outdated">Outdated</span>
-            </div>
-            <p class="mc-for">For Minecraft 1.21.1</p>
-            <p class="needs-loader">Needs NeoForge for Minecraft 1.21.1</p>
-            <p class="version-note">Outdated &mdash; for older 1.21.1 worlds only.</p>
+        <li class="release reveal">
+          <div class="release-meta">
+            <p class="release-name">1.0.0 <span class="tag-muted">Retired</span></p>
+            <p class="release-for">Minecraft 1.21.1</p>
+            <p class="release-note">Legacy loader only.</p>
           </div>
-          <a class="btn btn-download" href="https://github.com/developer-az/eva-mod/releases/download/v1.0.0/evamod-1.0.0.jar" download>Download 1.21.1 jar</a>
+          <a class="btn btn-line btn-sm" href="https://github.com/developer-az/eva-mod/releases/download/v1.0.0/evamod-1.0.0.jar" download>Jar</a>
         </li>
       </ul>
     </section>
 
     <section class="install" id="install">
       <div class="section-head reveal">
+        <p class="eyebrow">Ritual</p>
         <h2>Install</h2>
       </div>
-      <ol class="steps">
+      <ol class="ritual">
         <li class="reveal">
-          <span class="step-num">1</span>
+          <span class="ritual-num">01</span>
           <div>
-            <h3>Get NeoForge</h3>
-            <p>Install <a href="https://neoforged.net/" rel="noopener noreferrer">NeoForge</a> for your Minecraft version.</p>
+            <h3>NeoForge</h3>
+            <p>Install <a href="https://neoforged.net/" rel="noopener noreferrer">NeoForge</a> for Minecraft 26.2.</p>
           </div>
         </li>
         <li class="reveal">
-          <span class="step-num">2</span>
+          <span class="ritual-num">02</span>
           <div>
-            <h3>Drop in the jar</h3>
-            <p>Put <code>evamod-2.1.0.jar</code> into <code>.minecraft/mods</code>. Open the Homestead Primer book in-game for commands.</p>
+            <h3>The jar</h3>
+            <p>Drop <code>evamod-2.1.0.jar</code> into <code>.minecraft/mods</code>.</p>
           </div>
         </li>
         <li class="reveal">
-          <span class="step-num">3</span>
+          <span class="ritual-num">03</span>
           <div>
-            <h3>Launch</h3>
-            <p>Start that NeoForge profile and say hi to your neighbors.</p>
+            <h3>Arrive</h3>
+            <p>Launch. Open the Homestead Primer — your map to towns and neighbors.</p>
           </div>
         </li>
       </ol>
@@ -238,15 +207,15 @@
   </main>
 
   <footer class="footer">
-    <p class="footer-brand">Eva Mod &mdash; Homestead 2.1</p>
-    <p>Made with care for cozy Minecraft nights. Releases by <a href="https://github.com/developer-az" rel="noopener noreferrer">developer-az</a>.</p>
-    <p class="footer-links">
-      <a href="https://github.com/developer-az/eva-mod" rel="noopener noreferrer">Repository</a>
-      <a href="https://github.com/developer-az/eva-mod/releases/tag/v2.1.0-mc26.2" rel="noopener noreferrer">Latest release</a>
+    <p class="footer-mark">Eva Mod</p>
+    <p class="footer-tag">Homestead · soft worlds, lasting folk</p>
+    <nav class="footer-nav" aria-label="Footer">
+      <a href="https://github.com/developer-az/eva-mod" rel="noopener noreferrer">GitHub</a>
+      <a href="https://github.com/developer-az/eva-mod/releases/tag/v2.1.0-mc26.2" rel="noopener noreferrer">2.1.0</a>
       <a href="https://github.com/developer-az/eva-mod/releases" rel="noopener noreferrer">All releases</a>
-    </p>
+    </nav>
   </footer>
 
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>

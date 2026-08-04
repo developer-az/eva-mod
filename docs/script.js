@@ -2,7 +2,7 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const topbar = document.getElementById("topbar");
   const navLinks = [...document.querySelectorAll("[data-nav]")];
-  const sections = ["archive", "install"]
+  const sections = ["folk", "archive", "install"]
     .map((id) => document.getElementById(id))
     .filter(Boolean);
 

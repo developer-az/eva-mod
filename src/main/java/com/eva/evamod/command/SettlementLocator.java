@@ -25,7 +25,11 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -36,6 +40,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
  * Chunked settlement search — avoids stalling the main thread with a full 128-chunk grid.
+ * Teleport landing prefers beds / house interiors and never drops the player at Y≈0.
  */
 @EventBusSubscriber(modid = EvaMod.MODID)
 public final class SettlementLocator {
@@ -44,6 +49,7 @@ public final class SettlementLocator {
     private static final int PROBES_PER_TICK = 6;
     private static final int LOADED_RING_SOFT = 12;
     private static final int LOADED_RING_HARD = 32;
+    private static final int MIN_SAFE_Y = 16;
 
     private static final Map<UUID, SearchJob> JOBS = new ConcurrentHashMap<>();
 
@@ -60,15 +66,23 @@ public final class SettlementLocator {
 
     /** Prefer cache / loaded chunks; otherwise start a progressive probe job. */
     public static LocateResult tryInstant(ServerLevel level, BlockPos origin, PlayerEvaData data) {
-        LocateResult cached = findInCache(level, origin, data);
+        return tryInstant(level, origin, data, false);
+    }
+
+    public static LocateResult tryInstant(ServerLevel level, BlockPos origin, PlayerEvaData data, boolean townsOnly) {
+        LocateResult cached = findInCache(level, origin, data, townsOnly);
         if (cached != null) {
             return cached;
         }
-        return findInLoadedChunks(level, origin, data);
+        return findInLoadedChunks(level, origin, data, townsOnly);
     }
 
     public static void startSearch(ServerPlayer player, PlayerEvaData data) {
-        JOBS.put(player.getUUID(), new SearchJob(player.getUUID(), player.blockPosition().immutable(), data.copy()));
+        startSearch(player, data, false);
+    }
+
+    public static void startSearch(ServerPlayer player, PlayerEvaData data, boolean townsOnly) {
+        JOBS.put(player.getUUID(), new SearchJob(player.getUUID(), player.blockPosition().immutable(), data.copy(), townsOnly));
     }
 
     @SubscribeEvent
@@ -91,14 +105,15 @@ public final class SettlementLocator {
                 finishSuccess(player, found);
             } else if (job.done()) {
                 it.remove();
+                String kind = job.townsOnly ? "npc_town" : "npc_house/npc_town";
                 player.sendSystemMessage(Component.literal(
-                        "No new npc_house/npc_town found within " + LOCATE_CHUNK_RADIUS
-                                + " chunks. Travel farther, explore new biomes, then try /evamod locate again"
+                        "No new " + kind + " found within " + LOCATE_CHUNK_RADIUS
+                                + " chunks. Travel farther, explore new biomes, then try again"
                                 + " — or /evamod locate reset if you already found nearby ones.")
                         .withStyle(ChatFormatting.RED));
             } else if (job.shouldAnnounceProgress()) {
                 player.sendSystemMessage(Component.literal(
-                        "Still searching for houses… " + job.progressPercent()
+                        "Still searching… " + job.progressPercent()
                                 + "% (safe to keep playing; you do not need cheats for this)")
                         .withStyle(ChatFormatting.GRAY));
             }
@@ -111,17 +126,20 @@ public final class SettlementLocator {
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
         rememberWorldCache(player.level(), found);
 
+        BlockPos land = safeInteriorTeleportPos(player.level(), found.pos(), found.town());
         String label = found.town() ? "npc_town (hamlet)" : "npc_house";
         int npcHint = found.town()
                 ? countNpcsNear(player.level(), found.pos(), 48)
                 : countNpcsNear(player.level(), found.pos(), 16);
         MutableComponent msg = Component.literal("Found " + label + " at ").withStyle(ChatFormatting.GREEN);
-        msg = clickablePos(msg, found.pos());
+        msg = clickablePos(msg, land);
         if (found.town()) {
             msg.append(Component.literal(npcHint > 0
                     ? " — town with " + npcHint + " NPC(s) nearby"
                     : " — multi-NPC hamlet").withStyle(ChatFormatting.GRAY));
         }
+        msg.append(Component.literal("  (/evamod visit or /evamod town visit to teleport if cheats are on)")
+                .withStyle(ChatFormatting.DARK_GRAY));
         player.sendSystemMessage(msg);
     }
 
@@ -131,7 +149,7 @@ public final class SettlementLocator {
         level.setData(ModAttachments.SETTLEMENT_CACHE, cache.copy());
     }
 
-    private static LocateResult findInCache(ServerLevel level, BlockPos origin, PlayerEvaData data) {
+    private static LocateResult findInCache(ServerLevel level, BlockPos origin, PlayerEvaData data, boolean townsOnly) {
         SettlementCache cache = level.getData(ModAttachments.SETTLEMENT_CACHE);
         LocateResult best = null;
         double bestDist = Double.MAX_VALUE;
@@ -144,6 +162,9 @@ public final class SettlementLocator {
                 bestDist = dist;
                 best = new LocateResult(pos, true);
             }
+        }
+        if (townsOnly) {
+            return best;
         }
         for (BlockPos pos : cache.houses()) {
             if (data.isLocateSkipped(pos)) {
@@ -158,10 +179,12 @@ public final class SettlementLocator {
         return best;
     }
 
-    static LocateResult findInLoadedChunks(ServerLevel level, BlockPos origin, PlayerEvaData data) {
+    static LocateResult findInLoadedChunks(ServerLevel level, BlockPos origin, PlayerEvaData data, boolean townsOnly) {
         List<Holder.Reference<Structure>> structures = new ArrayList<>();
         try {
-            structures.add(level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(EvaModCommands.NPC_HOUSE));
+            if (!townsOnly) {
+                structures.add(level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(EvaModCommands.NPC_HOUSE));
+            }
             structures.add(level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(EvaModCommands.NPC_TOWN));
         } catch (Exception e) {
             return null;
@@ -180,13 +203,17 @@ public final class SettlementLocator {
                     if (!level.hasChunk(chunkX, chunkZ)) {
                         continue;
                     }
-                    BlockPos sample = new BlockPos((chunkX << 4) + 8, origin.getY(), (chunkZ << 4) + 8);
+                    BlockPos sample = new BlockPos((chunkX << 4) + 8, Math.max(origin.getY(), 64), (chunkZ << 4) + 8);
                     for (Holder.Reference<Structure> structure : structures) {
                         StructureStart start = level.structureManager().getStructureAt(sample, structure.value());
                         if (start == null || !start.isValid()) {
                             continue;
                         }
                         BlockPos center = start.getBoundingBox().getCenter();
+                        // Map centers sometimes report Y=0 — lift to box min Y or surface.
+                        if (center.getY() < MIN_SAFE_Y) {
+                            center = new BlockPos(center.getX(), Math.max(start.getBoundingBox().minY(), MIN_SAFE_Y), center.getZ());
+                        }
                         if (data.isLocateSkipped(center)) {
                             continue;
                         }
@@ -209,21 +236,37 @@ public final class SettlementLocator {
         try {
             Holder.Reference<Structure> town =
                     level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(EvaModCommands.NPC_TOWN);
-            StructureStart townStart = level.structureManager().getStructureAt(hit, town.value());
+            StructureStart townStart = level.structureManager().getStructureAt(liftY(hit), town.value());
             if (townStart != null && townStart.isValid()) {
-                return new LocateResult(townStart.getBoundingBox().getCenter(), true);
+                return new LocateResult(liftBoxCenter(townStart), true);
             }
             Holder.Reference<Structure> house =
                     level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(EvaModCommands.NPC_HOUSE);
-            StructureStart houseStart = level.structureManager().getStructureAt(hit, house.value());
+            StructureStart houseStart = level.structureManager().getStructureAt(liftY(hit), house.value());
             if (houseStart != null && houseStart.isValid()) {
-                return new LocateResult(houseStart.getBoundingBox().getCenter(), false);
+                return new LocateResult(liftBoxCenter(houseStart), false);
             }
         } catch (Exception ignored) {
             // Unloaded / unavailable — fall through with map position.
         }
-        boolean town = countNpcsNear(level, hit, 40) >= 3;
-        return new LocateResult(hit, town);
+        boolean town = countNpcsNear(level, liftY(hit), 40) >= 3;
+        return new LocateResult(liftY(hit), town);
+    }
+
+    private static BlockPos liftY(BlockPos pos) {
+        if (pos.getY() < MIN_SAFE_Y) {
+            return new BlockPos(pos.getX(), 64, pos.getZ());
+        }
+        return pos;
+    }
+
+    private static BlockPos liftBoxCenter(StructureStart start) {
+        BlockPos center = start.getBoundingBox().getCenter();
+        int y = center.getY();
+        if (y < MIN_SAFE_Y) {
+            y = Math.max(start.getBoundingBox().minY(), MIN_SAFE_Y);
+        }
+        return new BlockPos(center.getX(), y, center.getZ());
     }
 
     static int countNpcsNear(ServerLevel level, BlockPos pos, int radius) {
@@ -234,28 +277,169 @@ public final class SettlementLocator {
         return level.getEntitiesOfClass(BiomeNpc.class, box, Entity::isAlive).size();
     }
 
-    /** Safe landing near a structure map position (surface height, 2-block clearance). */
+    /**
+     * Land the player inside a house: prefer standing on/beside a bed, else NPC home floor,
+     * else surface. Never returns underground Y≈0.
+     */
+    public static BlockPos safeInteriorTeleportPos(ServerLevel level, BlockPos rough, boolean town) {
+        BlockPos target = liftY(rough);
+        // Ensure the destination chunk is loaded so heightmaps / beds resolve.
+        level.getChunkAt(target);
+
+        int searchRadius = town ? 48 : 20;
+        List<BiomeNpc> npcs = level.getEntitiesOfClass(
+                BiomeNpc.class, new AABB(target).inflate(searchRadius), Entity::isAlive);
+        npcs.sort(Comparator.comparingDouble(n -> n.blockPosition().distSqr(target)));
+
+        for (BiomeNpc npc : npcs) {
+            BlockPos home = npc.hasHome() ? npc.getHomePos() : npc.blockPosition();
+            BlockPos bed = findBedNear(level, home, 10);
+            if (bed != null) {
+                BlockPos stand = standOnOrBeside(level, bed);
+                if (isSafeStanding(level, stand)) {
+                    return stand;
+                }
+            }
+            BlockPos interior = interiorNearHome(level, home);
+            if (interior != null && isSafeStanding(level, interior)) {
+                return interior;
+            }
+        }
+
+        BlockPos bed = findBedNear(level, target, searchRadius);
+        if (bed != null) {
+            BlockPos stand = standOnOrBeside(level, bed);
+            if (isSafeStanding(level, stand)) {
+                return stand;
+            }
+        }
+
+        return safeSurfacePos(level, target);
+    }
+
+    /** Prefer {@link #safeInteriorTeleportPos}. */
+    @Deprecated
     static BlockPos safeTeleportPos(ServerLevel level, BlockPos rough) {
+        return safeInteriorTeleportPos(level, rough, false);
+    }
+
+    private static BlockPos findBedNear(ServerLevel level, BlockPos origin, int radius) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+        int minY = Math.max(level.getMinY() + 1, origin.getY() - 4);
+        int maxY = origin.getY() + 8;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                for (int y = minY; y <= maxY; y++) {
+                    cursor.set(origin.getX() + dx, y, origin.getZ() + dz);
+                    if (!level.hasChunkAt(cursor)) {
+                        continue;
+                    }
+                    BlockState state = level.getBlockState(cursor);
+                    if (state.getBlock() instanceof BedBlock
+                            && state.hasProperty(BedBlock.PART)
+                            && state.getValue(BedBlock.PART) == BedPart.FOOT) {
+                        double dist = cursor.distSqr(origin);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            best = cursor.immutable();
+                        }
+                    } else if (state.is(BlockTags.BEDS) && best == null) {
+                        best = cursor.immutable();
+                        bestDist = cursor.distSqr(origin);
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private static BlockPos standOnOrBeside(ServerLevel level, BlockPos bed) {
+        // Prefer standing on the bed (feet), else adjacent air with solid floor.
+        BlockPos onBed = bed.above();
+        if (isSafeStanding(level, onBed) || level.getBlockState(bed).getBlock() instanceof BedBlock) {
+            // Standing atop the bed block itself (collision is low) — use bed pos + small lift.
+            BlockPos atop = new BlockPos(bed.getX(), bed.getY() + 1, bed.getZ());
+            if (level.getBlockState(atop).isAir() && level.getBlockState(atop.above()).isAir()) {
+                return atop;
+            }
+        }
+        for (BlockPos beside : List.of(bed.north(), bed.south(), bed.east(), bed.west(),
+                bed.north().east(), bed.north().west(), bed.south().east(), bed.south().west())) {
+            if (isSafeStanding(level, beside)) {
+                return beside;
+            }
+            BlockPos up = beside.above();
+            if (isSafeStanding(level, up)) {
+                return up;
+            }
+        }
+        return new BlockPos(bed.getX(), Math.max(bed.getY() + 1, MIN_SAFE_Y), bed.getZ());
+    }
+
+    private static BlockPos interiorNearHome(ServerLevel level, BlockPos home) {
+        level.getChunkAt(home);
+        int baseY = home.getY();
+        if (baseY < MIN_SAFE_Y) {
+            int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, home.getX(), home.getZ());
+            baseY = Math.max(surface, MIN_SAFE_Y);
+        }
+        BlockPos candidate = new BlockPos(home.getX(), baseY, home.getZ());
+        if (isSafeStanding(level, candidate)) {
+            return candidate;
+        }
+        for (int dy = 0; dy <= 4; dy++) {
+            BlockPos up = new BlockPos(home.getX(), baseY + dy, home.getZ());
+            if (isSafeStanding(level, up)) {
+                return up;
+            }
+        }
+        return null;
+    }
+
+    private static BlockPos safeSurfacePos(ServerLevel level, BlockPos rough) {
         int x = rough.getX();
         int z = rough.getZ();
+        level.getChunkAt(new BlockPos(x, 64, z));
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        if (y < level.getMinY() + 1) {
-            y = Math.max(level.getMinY() + 1, rough.getY());
+        if (y < MIN_SAFE_Y) {
+            y = Math.max(MIN_SAFE_Y, Math.max(rough.getY(), level.getSeaLevel()));
         }
         BlockPos feet = new BlockPos(x, y, z);
-        if (!level.getBlockState(feet).isAir() || !level.getBlockState(feet.above()).isAir()) {
-            for (int dy = 1; dy <= 8; dy++) {
+        if (!isSafeStanding(level, feet)) {
+            for (int dy = 1; dy <= 10; dy++) {
                 BlockPos up = feet.above(dy);
-                if (level.getBlockState(up).isAir() && level.getBlockState(up.above()).isAir()) {
+                if (isSafeStanding(level, up)) {
                     return up;
                 }
             }
         }
-        return feet;
+        return feet.getY() < MIN_SAFE_Y ? new BlockPos(x, MIN_SAFE_Y, z) : feet;
+    }
+
+    private static boolean isSafeStanding(ServerLevel level, BlockPos feet) {
+        if (feet.getY() < MIN_SAFE_Y) {
+            return false;
+        }
+        if (!level.hasChunkAt(feet)) {
+            return false;
+        }
+        BlockState at = level.getBlockState(feet);
+        BlockState head = level.getBlockState(feet.above());
+        BlockState below = level.getBlockState(feet.below());
+        boolean spaceClear = (at.isAir() || at.getBlock() instanceof BedBlock || at.is(BlockTags.BEDS))
+                && (head.isAir() || head.canBeReplaced());
+        boolean floorSolid = below.getBlock() instanceof BedBlock
+                || below.is(BlockTags.BEDS)
+                || !below.getCollisionShape(level, feet.below()).isEmpty();
+        return spaceClear && floorSolid;
     }
 
     static MutableComponent clickablePos(Component prefix, BlockPos pos) {
-        String coords = pos.getX() + " " + pos.getY() + " " + pos.getZ();
+        // Never suggest a Y=0 teleport in chat.
+        int y = Math.max(pos.getY(), MIN_SAFE_Y);
+        String coords = pos.getX() + " " + y + " " + pos.getZ();
         return Component.empty().append(prefix).append(Component.literal(coords).withStyle(Style.EMPTY
                 .withColor(ChatFormatting.AQUA)
                 .withUnderlined(true)
@@ -263,13 +447,14 @@ public final class SettlementLocator {
                 .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to suggest teleport")))));
     }
 
-    record LocateResult(BlockPos pos, boolean town) {
+    public record LocateResult(BlockPos pos, boolean town) {
     }
 
     private static final class SearchJob {
         private final UUID playerId;
         private final BlockPos origin;
         private final PlayerEvaData data;
+        private final boolean townsOnly;
         private final List<BlockPos> probes = new ArrayList<>();
         private final Set<Long> seen = new HashSet<>();
         private int index;
@@ -278,11 +463,11 @@ public final class SettlementLocator {
         private double bestDist = Double.MAX_VALUE;
         private int lastAnnouncePercent = -10;
 
-        private SearchJob(UUID playerId, BlockPos origin, PlayerEvaData data) {
+        private SearchJob(UUID playerId, BlockPos origin, PlayerEvaData data, boolean townsOnly) {
             this.playerId = playerId;
             this.origin = origin;
             this.data = data;
-            // Spiral / ring order so nearer probes run first; stop early when we have a hit.
+            this.townsOnly = townsOnly;
             for (int ring = 0; ring <= LOCATE_CHUNK_RADIUS; ring += PROBE_STEP_CHUNKS) {
                 if (ring == 0) {
                     probes.add(origin);
@@ -305,8 +490,14 @@ public final class SettlementLocator {
             int budget = PROBES_PER_TICK;
             while (budget-- > 0 && index < probes.size()) {
                 BlockPos probe = probes.get(index++);
-                BlockPos hit = level.findNearestMapStructure(
-                        EvaModCommands.NPC_SETTLEMENT_TAG, probe, PROBE_STEP_CHUNKS + 16, false);
+                BlockPos hit;
+                if (townsOnly) {
+                    hit = level.findNearestMapStructure(
+                            EvaModCommands.NPC_TOWN_TAG, probe, PROBE_STEP_CHUNKS + 16, false);
+                } else {
+                    hit = level.findNearestMapStructure(
+                            EvaModCommands.NPC_SETTLEMENT_TAG, probe, PROBE_STEP_CHUNKS + 16, false);
+                }
                 if (hit == null || data.isLocateSkipped(hit)) {
                     continue;
                 }
@@ -315,12 +506,14 @@ public final class SettlementLocator {
                     continue;
                 }
                 LocateResult refined = refineResult(level, hit);
+                if (townsOnly && !refined.town()) {
+                    continue;
+                }
                 double dist = refined.pos().distSqr(origin);
                 if (dist < bestDist) {
                     bestDist = dist;
                     best = refined;
                 }
-                // Near-enough hit on an inner ring: return without finishing the whole grid.
                 int probeChunkDist = Math.max(
                         Math.abs((probe.getX() - origin.getX()) >> 4),
                         Math.abs((probe.getZ() - origin.getZ()) >> 4));
@@ -331,7 +524,6 @@ public final class SettlementLocator {
             if (done() && best != null) {
                 return best;
             }
-            // Early exit once we have a candidate and remaining probes are farther than it.
             if (best != null && index < probes.size()) {
                 BlockPos next = probes.get(index);
                 if (next.distSqr(origin) >= bestDist) {

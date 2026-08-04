@@ -10,6 +10,8 @@ import net.minecraft.resources.Identifier;
 public record DialogueActionPayload(int entityId, int action) implements CustomPacketPayload {
     public static final int ACTION_TALK = 0;
     public static final int ACTION_TRADE = 1;
+    public static final int ACTION_ERRAND = 2;
+    public static final int ACTION_TIP = 3;
 
     public static final Type<DialogueActionPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(EvaMod.MODID, "dialogue_action"));

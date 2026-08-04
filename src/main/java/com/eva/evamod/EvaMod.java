@@ -12,11 +12,13 @@ import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
 
 /**
- * Eva Mod — biome NPCs with homes, memory, dialogue and trades.
+ * Eva Mod 2.0 Homestead — biome NPCs with towns, hearts, seasons, errands, and mail.
  * <p>
  * Compatibility notes: all registries/network IDs use {@code evamod}; no global mixins;
  * structure set salt is unique; entity attributes via NeoForge events. Safe for dedicated
  * multiplayer (server authority for dialogue/trades/memory; client only renders UI/bubbles).
+ * <p>
+ * Versions 1.x are outdated/unsupported.
  */
 @Mod(EvaMod.MODID)
 public class EvaMod {

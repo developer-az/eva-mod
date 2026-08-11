@@ -1,5 +1,8 @@
 {
   "entity.evamod.biome_npc": "Biome Villager",
+  "entity.evamod.stuffed_pet": "Stuffed Pet",
   "item.evamod.biome_npc_spawn_egg": "Biome Villager Spawn Egg",
+  "item.evamod.stuffed_pet_spawn_egg": "Stuffed Pet Spawn Egg",
+  "item.evamod.alive_plush": "Alive Plush",
   "commands.evamod.help": "Eva Mod 2.0 Homestead command help"
 }

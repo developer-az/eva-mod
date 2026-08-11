@@ -4,6 +4,7 @@ import com.eva.evamod.EvaMod;
 import com.eva.evamod.ModVersions;
 import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.entity.BiomeNpc;
+import com.eva.evamod.entity.StuffedPet;
 import com.eva.evamod.friendship.Hearts;
 import com.eva.evamod.mail.MailMessage;
 import com.eva.evamod.mail.MailService;
@@ -99,10 +100,13 @@ public final class EvaModCommands {
             Map.entry("settle", "settle"),
             Map.entry("found", "settle"),
             Map.entry("homestead", "settle"),
-            Map.entry("version", "version"));
+            Map.entry("version", "version"),
+            Map.entry("pet", "pet"),
+            Map.entry("pets", "pet"),
+            Map.entry("companion", "pet"));
 
     private static final List<String> KNOWN_COMMANDS =
-            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book", "settle", "version");
+            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book", "settle", "version", "pet");
 
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -218,6 +222,23 @@ public final class EvaModCommands {
                 .then(Commands.literal("quest")
                         .executes(ctx -> errand(ctx.getSource()))
                         .then(extraArgs("errand")))
+                .then(Commands.literal("pet")
+                        .executes(ctx -> petStatus(ctx.getSource()))
+                        .then(Commands.literal("sit").executes(ctx -> petSit(ctx.getSource(), true)))
+                        .then(Commands.literal("follow").executes(ctx -> petSit(ctx.getSource(), false)))
+                        .then(Commands.literal("glow").executes(ctx -> petGlow(ctx.getSource())))
+                        .then(Commands.literal("find").executes(ctx -> petFind(ctx.getSource())))
+                        .then(Commands.literal("here").executes(ctx -> petHere(ctx.getSource())))
+                        .then(extraArgs("pet")))
+                .then(Commands.literal("pets")
+                        .executes(ctx -> petStatus(ctx.getSource()))
+                        .then(Commands.literal("sit").executes(ctx -> petSit(ctx.getSource(), true)))
+                        .then(Commands.literal("follow").executes(ctx -> petSit(ctx.getSource(), false)))
+                        .then(Commands.literal("glow").executes(ctx -> petGlow(ctx.getSource())))
+                        .then(Commands.literal("find").executes(ctx -> petFind(ctx.getSource())))
+                        .then(Commands.literal("here").executes(ctx -> petHere(ctx.getSource()))))
+                .then(Commands.literal("companion")
+                        .executes(ctx -> petStatus(ctx.getSource())))
                 .then(Commands.argument("unknown", StringArgumentType.greedyString())
                         .executes(ctx -> unknownInput(
                                 ctx.getSource(), StringArgumentType.getString(ctx, "unknown"))));
@@ -267,6 +288,9 @@ public final class EvaModCommands {
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod near", "List nearby NPCs"),
                 Component.literal(" — NPCs near you")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod pet", "Pet companion"),
+                Component.literal(" — stuffed pet status & utilities")), false);
         source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
                 .withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
@@ -554,6 +578,121 @@ public final class EvaModCommands {
                 .withStyle(ChatFormatting.GREEN), false);
         source.sendSuccess(() -> Component.literal("Reward: +" + errand.rewardRep() + " friendship when delivered.")
                 .withStyle(ChatFormatting.GRAY), false);
+        return 1;
+    }
+
+    private static int petStatus(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        StuffedPet pet = StuffedPet.findOwnedPet(player);
+        if (pet == null) {
+            source.sendSuccess(() -> Component.literal("No awakened pet nearby. Place an Alive Plush on the ground!")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            if (data.petsAwakened() > 0) {
+                source.sendSuccess(() -> Component.literal("You've awakened " + data.petsAwakened()
+                                + " pet(s) before — they may be far away. Try /evamod pet here when close.")
+                        .withStyle(ChatFormatting.GRAY), false);
+            }
+            tipPetCommands(source);
+            return 1;
+        }
+        String kind = pet.getKind().getDisplayName();
+        String pose = pet.isOrderedToSit() ? "sitting" : "following";
+        String carried = pet.getCarriedItem().isEmpty()
+                ? "nothing"
+                : pet.getCarriedItem().getHoverName().getString();
+        source.sendSuccess(() -> Component.literal(pet.getName().getString() + " the " + kind
+                        + " — " + pose
+                        + (pet.isGlowUtility() ? ", glowing" : "")
+                        + ", ribbon " + pet.getRibbonColor().getName()
+                        + ", carrying " + carried
+                        + ".")
+                .withStyle(ChatFormatting.GREEN), false);
+        tipPetCommands(source);
+        return 1;
+    }
+
+    private static void tipPetCommands(CommandSourceStack source) {
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod pet sit", "Sit"),
+                Component.literal(" · "),
+                suggestCommand("/evamod pet follow", "Follow"),
+                Component.literal(" · "),
+                suggestCommand("/evamod pet glow", "Glow"),
+                Component.literal(" · "),
+                suggestCommand("/evamod pet find", "Find settlement"),
+                Component.literal(" · "),
+                suggestCommand("/evamod pet here", "Come here")), false);
+    }
+
+    private static int petSit(CommandSourceStack source, boolean sit) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        StuffedPet pet = StuffedPet.findOwnedPet(player);
+        if (pet == null) {
+            source.sendFailure(Component.literal("No pet found. Awaken an Alive Plush first."));
+            return 0;
+        }
+        pet.setOrderedToSit(sit);
+        pet.getNavigation().stop();
+        pet.setBubbleText(sit ? "sit" : "ok!");
+        source.sendSuccess(() -> Component.literal(sit
+                        ? pet.getName().getString() + " sits patiently."
+                        : pet.getName().getString() + " trots after you.")
+                .withStyle(ChatFormatting.AQUA), false);
+        return 1;
+    }
+
+    private static int petGlow(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        StuffedPet pet = StuffedPet.findOwnedPet(player);
+        if (pet == null) {
+            source.sendFailure(Component.literal("No pet found. Awaken an Alive Plush first."));
+            return 0;
+        }
+        pet.toggleGlow(player);
+        return 1;
+    }
+
+    private static int petFind(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        StuffedPet pet = StuffedPet.findOwnedPet(player);
+        if (pet == null) {
+            source.sendFailure(Component.literal("No pet found. Awaken an Alive Plush first."));
+            return 0;
+        }
+        return pet.findSettlementHint(player);
+    }
+
+    private static int petHere(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        StuffedPet pet = StuffedPet.findOwnedPet(player);
+        if (pet == null) {
+            source.sendFailure(Component.literal(
+                    "No pet found nearby. They may be unloaded — walk closer to where you left them."));
+            return 0;
+        }
+        if (pet.level() != player.level()) {
+            source.sendFailure(Component.literal("Your pet is in another dimension. Travel there, then try again."));
+            return 0;
+        }
+        pet.softTeleportToOwner(player);
+        source.sendSuccess(() -> Component.literal(pet.getName().getString() + " pops over to you.")
+                .withStyle(ChatFormatting.GREEN), false);
         return 1;
     }
 

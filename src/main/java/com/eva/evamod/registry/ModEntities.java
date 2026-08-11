@@ -2,6 +2,7 @@ package com.eva.evamod.registry;
 
 import com.eva.evamod.EvaMod;
 import com.eva.evamod.entity.BiomeNpc;
+import com.eva.evamod.entity.StuffedPet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -26,8 +27,19 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build(BIOME_NPC_KEY));
 
+    public static final ResourceKey<EntityType<?>> STUFFED_PET_KEY =
+            ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(EvaMod.MODID, "stuffed_pet"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StuffedPet>> STUFFED_PET =
+            ENTITY_TYPES.register("stuffed_pet", () -> EntityType.Builder.of(StuffedPet::new, MobCategory.CREATURE)
+                    .sized(0.6F, 0.8F)
+                    .eyeHeight(0.65F)
+                    .clientTrackingRange(10)
+                    .build(STUFFED_PET_KEY));
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(BIOME_NPC.get(), BiomeNpc.createAttributes().build());
+        event.put(STUFFED_PET.get(), StuffedPet.createAttributes().build());
     }
 
     private ModEntities() {

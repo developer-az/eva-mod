@@ -1,6 +1,7 @@
 package com.eva.evamod;
 
 import com.eva.evamod.net.ModNetworking;
+import com.eva.evamod.pet.PetBootstrap;
 import com.eva.evamod.registry.ModAttachments;
 import com.eva.evamod.registry.ModEntities;
 import com.eva.evamod.registry.ModItems;
@@ -36,5 +37,7 @@ public class EvaMod {
         modEventBus.addListener(ModEntities::registerAttributes);
         modEventBus.addListener(ModItems::addToTabs);
         modEventBus.addListener(ModNetworking::register);
+
+        PetBootstrap.register();
     }
 }

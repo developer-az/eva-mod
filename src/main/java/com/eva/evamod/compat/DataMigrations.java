@@ -22,7 +22,8 @@ public final class DataMigrations {
         }
         int from = data.schemaVersion();
         data.setSchemaVersion(ModVersions.PLAYER_SCHEMA);
-        // schema 0/1 → 2: guide-book flag defaults false (already); nothing else to remap.
+        // schema 0/1 → 2: guide-book flag defaults false (already).
+        // schema 2 → 3: optional pet fields default empty / petsAwakened 0.
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
         if (from < ModVersions.PLAYER_SCHEMA) {
             EvaMod.LOGGER.debug("Migrated player {} Eva data schema {} → {}",

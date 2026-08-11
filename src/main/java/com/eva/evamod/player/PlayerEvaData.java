@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 
 /**
@@ -26,7 +28,10 @@ public class PlayerEvaData {
             Codec.STRING.listOf().optionalFieldOf("heartEvents", List.of()).forGetter(d -> new ArrayList<>(d.seenHeartEvents)),
             Codec.LONG.optionalFieldOf("lastMailDay", -1L).forGetter(d -> d.lastMailDay),
             Codec.INT.optionalFieldOf("errandsDone", 0).forGetter(d -> d.errandsCompleted),
-            Codec.BOOL.optionalFieldOf("gotGuide", false).forGetter(d -> d.receivedGuideBook)
+            Codec.BOOL.optionalFieldOf("gotGuide", false).forGetter(d -> d.receivedGuideBook),
+            Codec.STRING.optionalFieldOf("petEntityUuid").forGetter(d -> Optional.ofNullable(d.petEntityUuid)),
+            Codec.STRING.optionalFieldOf("petKind").forGetter(d -> Optional.ofNullable(d.petKind)),
+            Codec.INT.optionalFieldOf("petsAwakened", 0).forGetter(d -> d.petsAwakened)
     ).apply(instance, PlayerEvaData::fromCodec));
 
     private static final int SKIP_RADIUS_SQR = 20 * 20;
@@ -42,9 +47,12 @@ public class PlayerEvaData {
     private long lastMailDay;
     private int errandsCompleted;
     private boolean receivedGuideBook;
+    private @Nullable String petEntityUuid;
+    private @Nullable String petKind;
+    private int petsAwakened;
 
     public PlayerEvaData() {
-        this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false);
+        this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false, null, null, 0);
     }
 
     public PlayerEvaData(
@@ -56,7 +64,10 @@ public class PlayerEvaData {
             Set<String> seenHeartEvents,
             long lastMailDay,
             int errandsCompleted,
-            boolean receivedGuideBook) {
+            boolean receivedGuideBook,
+            @Nullable String petEntityUuid,
+            @Nullable String petKind,
+            int petsAwakened) {
         this.schemaVersion = schemaVersion;
         this.houses = new ArrayList<>(houses);
         this.locatedSkips = new ArrayList<>(locatedSkips);
@@ -66,6 +77,9 @@ public class PlayerEvaData {
         this.lastMailDay = lastMailDay;
         this.errandsCompleted = errandsCompleted;
         this.receivedGuideBook = receivedGuideBook;
+        this.petEntityUuid = petEntityUuid;
+        this.petKind = petKind;
+        this.petsAwakened = Math.max(0, petsAwakened);
     }
 
     private static PlayerEvaData fromCodec(
@@ -77,10 +91,14 @@ public class PlayerEvaData {
             List<String> heartEvents,
             long lastMailDay,
             int errandsDone,
-            boolean gotGuide) {
+            boolean gotGuide,
+            Optional<String> petEntityUuid,
+            Optional<String> petKind,
+            int petsAwakened) {
         return new PlayerEvaData(
                 schema, houses, located, errand.orElse(null), mail, new HashSet<>(heartEvents),
-                lastMailDay, errandsDone, gotGuide);
+                lastMailDay, errandsDone, gotGuide,
+                petEntityUuid.orElse(null), petKind.orElse(null), petsAwakened);
     }
 
     public int schemaVersion() {
@@ -211,9 +229,47 @@ public class PlayerEvaData {
         return true;
     }
 
+    public boolean hasPet() {
+        return petEntityUuid != null && !petEntityUuid.isBlank();
+    }
+
+    public Optional<UUID> petEntityUuid() {
+        if (petEntityUuid == null || petEntityUuid.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(petEntityUuid));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> petKind() {
+        return Optional.ofNullable(petKind);
+    }
+
+    public int petsAwakened() {
+        return petsAwakened;
+    }
+
+    public void setPet(UUID entityId, String kind) {
+        this.petEntityUuid = entityId == null ? null : entityId.toString();
+        this.petKind = kind;
+    }
+
+    public void clearPet() {
+        this.petEntityUuid = null;
+        this.petKind = null;
+    }
+
+    public void incrementPetsAwakened() {
+        this.petsAwakened++;
+    }
+
     public PlayerEvaData copy() {
         return new PlayerEvaData(
                 schemaVersion, houses, locatedSkips, activeErrand, mail, seenHeartEvents,
-                lastMailDay, errandsCompleted, receivedGuideBook);
+                lastMailDay, errandsCompleted, receivedGuideBook,
+                petEntityUuid, petKind, petsAwakened);
     }
 }

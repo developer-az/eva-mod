@@ -13,6 +13,7 @@ public final class EvaModClient {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.BIOME_NPC.get(), NpcRenderer::new);
+        event.registerEntityRenderer(ModEntities.STUFFED_PET.get(), PetRenderer::new);
     }
 
     private EvaModClient() {

@@ -477,6 +477,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
                 getBirthdayLabel());
         data.meetNpc(entry);
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
+        com.eva.evamod.adventure.AdventureService.signal(player, com.eva.evamod.adventure.AdventureService.Signal.MEET_NPC);
     }
 
     private void receiveGift(ServerPlayer player, ItemStack stack) {
@@ -534,6 +535,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             }
         }
         this.openDialogue(player, reaction);
+        com.eva.evamod.adventure.AdventureService.signal(player, com.eva.evamod.adventure.AdventureService.Signal.GIFT_NPC);
     }
 
     /** Offer, check, or complete an errand from the dialogue Help button. */
@@ -556,6 +558,8 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
                             this.getX(), this.getEyeY() + 0.5, this.getZ(), 6, 0.35, 0.35, 0.35, 0.0);
                 }
                 this.openDialogue(player, DialogueManager.Context.ERRAND_COMPLETE);
+                com.eva.evamod.adventure.AdventureService.signal(
+                        player, com.eva.evamod.adventure.AdventureService.Signal.COMPLETE_ERRAND);
             } else {
                 this.openDialogue(player, DialogueManager.Context.ERRAND_PROGRESS);
             }

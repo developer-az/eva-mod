@@ -47,16 +47,21 @@ public final class PlayerJoinHandler {
         // Day-gated mail only (no scans).
         MailService.tryDeliver(player);
 
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        com.eva.evamod.adventure.AdventureService.ensureStarted(player, data);
+        data = player.getData(ModAttachments.PLAYER_DATA);
+
         if (!TIPPED_THIS_SESSION.add(player.getUUID())) {
             return;
         }
 
-        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
         MutableComponent tip = Component.literal("Eva Mod — open your ")
                 .withStyle(ChatFormatting.GRAY)
                 .append(Component.literal("Homestead Primer").withStyle(ChatFormatting.GOLD))
                 .append(Component.literal(" book, or type ").withStyle(ChatFormatting.GRAY))
-                .append(suggest("/evamod", "Help"));
+                .append(suggest("/evamod", "Help"))
+                .append(Component.literal(" · ").withStyle(ChatFormatting.DARK_GRAY))
+                .append(suggest("/evamod adventure", "Stories"));
         player.sendSystemMessage(tip);
 
         if (world.likelyLegacyWorld() && !world.founderHomesteadPlaced()) {

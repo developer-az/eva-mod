@@ -141,6 +141,16 @@ public final class SettlementLocator {
         msg.append(Component.literal("  (/evamod visit or /evamod town visit to teleport if cheats are on)")
                 .withStyle(ChatFormatting.DARK_GRAY));
         player.sendSystemMessage(msg);
+        com.eva.evamod.adventure.AdventureService.signal(
+                player, com.eva.evamod.adventure.AdventureService.Signal.LOCATE);
+        if (found.town()) {
+            PlayerEvaData after = player.getData(ModAttachments.PLAYER_DATA);
+            if (after.discoverLandmark("town:" + found.pos().getX() + "," + found.pos().getZ())) {
+                player.setData(ModAttachments.PLAYER_DATA, after.copy());
+            }
+            com.eva.evamod.adventure.AdventureService.signal(
+                    player, com.eva.evamod.adventure.AdventureService.Signal.DISCOVER_TOWN);
+        }
     }
 
     static void rememberWorldCache(ServerLevel level, LocateResult found) {

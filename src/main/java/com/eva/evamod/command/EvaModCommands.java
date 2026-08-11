@@ -103,10 +103,15 @@ public final class EvaModCommands {
             Map.entry("version", "version"),
             Map.entry("pet", "pet"),
             Map.entry("pets", "pet"),
-            Map.entry("companion", "pet"));
+            Map.entry("companion", "pet"),
+            Map.entry("adventure", "adventure"),
+            Map.entry("adventures", "adventure"),
+            Map.entry("story", "adventure"),
+            Map.entry("stories", "adventure"));
 
     private static final List<String> KNOWN_COMMANDS =
-            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book", "settle", "version", "pet");
+            List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book",
+                    "settle", "version", "pet", "adventure");
 
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -239,6 +244,20 @@ public final class EvaModCommands {
                         .then(Commands.literal("here").executes(ctx -> petHere(ctx.getSource()))))
                 .then(Commands.literal("companion")
                         .executes(ctx -> petStatus(ctx.getSource())))
+                .then(Commands.literal("adventure")
+                        .executes(ctx -> adventureList(ctx.getSource()))
+                        .then(Commands.literal("list").executes(ctx -> adventureList(ctx.getSource())))
+                        .then(Commands.literal("start")
+                                .then(Commands.argument("id", StringArgumentType.word())
+                                        .executes(ctx -> adventureStart(
+                                                ctx.getSource(), StringArgumentType.getString(ctx, "id")))))
+                        .then(extraArgs("adventure")))
+                .then(Commands.literal("adventures")
+                        .executes(ctx -> adventureList(ctx.getSource()))
+                        .then(extraArgs("adventure")))
+                .then(Commands.literal("story")
+                        .executes(ctx -> adventureList(ctx.getSource()))
+                        .then(extraArgs("adventure")))
                 .then(Commands.argument("unknown", StringArgumentType.greedyString())
                         .executes(ctx -> unknownInput(
                                 ctx.getSource(), StringArgumentType.getString(ctx, "unknown"))));
@@ -291,6 +310,9 @@ public final class EvaModCommands {
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod pet", "Pet companion"),
                 Component.literal(" — stuffed pet status & utilities")), false);
+        source.sendSuccess(() -> line(
+                suggestCommand("/evamod adventure", "Adventure stories"),
+                Component.literal(" — multi-step cozy adventure stories")), false);
         source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
                 .withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
@@ -368,6 +390,16 @@ public final class EvaModCommands {
                             .withStyle(ChatFormatting.DARK_GRAY));
                     return msg;
                 }, false);
+                com.eva.evamod.adventure.AdventureService.signal(
+                        player, com.eva.evamod.adventure.AdventureService.Signal.LOCATE);
+                if (found.town()) {
+                    PlayerEvaData after = player.getData(ModAttachments.PLAYER_DATA);
+                    if (after.discoverLandmark("town:" + found.pos().getX() + "," + found.pos().getZ())) {
+                        player.setData(ModAttachments.PLAYER_DATA, after.copy());
+                    }
+                    com.eva.evamod.adventure.AdventureService.signal(
+                            player, com.eva.evamod.adventure.AdventureService.Signal.DISCOVER_TOWN);
+                }
                 return 1;
             }
             source.sendSuccess(() -> Component.literal(townsOnly
@@ -438,7 +470,16 @@ public final class EvaModCommands {
         if (player == null) {
             return 0;
         }
+        com.eva.evamod.adventure.AdventureService.signal(
+                player, com.eva.evamod.adventure.AdventureService.Signal.OPEN_JOURNAL);
         List<HouseIndexEntry> houses = player.getData(ModAttachments.PLAYER_DATA).houses();
+        PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
+        int done = data.adventuresCompleted();
+        if (done > 0 || !data.adventures().isEmpty()) {
+            source.sendSuccess(() -> Component.literal(
+                            "Adventures: " + done + " complete · /evamod adventure for stories")
+                    .withStyle(ChatFormatting.DARK_AQUA), false);
+        }
         if (houses.isEmpty()) {
             source.sendSuccess(() -> Component.literal("Journal empty — right-click Biome Villagers to meet them.")
                     .withStyle(ChatFormatting.YELLOW), false);
@@ -535,6 +576,8 @@ public final class EvaModCommands {
         }
         data.markAllMailRead();
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
+        com.eva.evamod.adventure.AdventureService.signal(
+                player, com.eva.evamod.adventure.AdventureService.Signal.READ_MAIL);
         return letters.size();
     }
 
@@ -558,6 +601,10 @@ public final class EvaModCommands {
                             "Next festival (" + SeasonCalendar.festivalName(day + finalUntil) + ") in "
                                     + finalUntil + " day(s).")
                     .withStyle(ChatFormatting.GRAY), false);
+        }
+        if (player != null) {
+            com.eva.evamod.adventure.AdventureService.signal(
+                    player, com.eva.evamod.adventure.AdventureService.Signal.CHECK_CALENDAR);
         }
         return 1;
     }
@@ -694,6 +741,23 @@ public final class EvaModCommands {
         source.sendSuccess(() -> Component.literal(pet.getName().getString() + " pops over to you.")
                 .withStyle(ChatFormatting.GREEN), false);
         return 1;
+    }
+
+    private static int adventureList(CommandSourceStack source) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        com.eva.evamod.adventure.AdventureService.listFor(player);
+        return 1;
+    }
+
+    private static int adventureStart(CommandSourceStack source, String id) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) {
+            return 0;
+        }
+        return com.eva.evamod.adventure.AdventureService.start(player, id);
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> extraArgs(String canonical) {

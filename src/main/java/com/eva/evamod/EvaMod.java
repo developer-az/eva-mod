@@ -1,5 +1,6 @@
 package com.eva.evamod;
 
+import com.eva.evamod.adventure.AdventureBootstrap;
 import com.eva.evamod.net.ModNetworking;
 import com.eva.evamod.pet.PetBootstrap;
 import com.eva.evamod.registry.ModAttachments;
@@ -13,8 +14,8 @@ import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
 
 /**
- * Eva Mod Homestead — biome NPCs with towns, hearts, seasons, errands, mail,
- * guide book, and Founder's Homestead for pre-mod worlds.
+ * Eva Mod Companions — biome NPCs, stuffed-animal pets, multi-step adventures,
+ * towns, hearts, seasons, errands, mail, and Homestead Primer.
  * <p>
  * Compatibility: registry/network IDs use {@code evamod}; no global mixins;
  * schema-versioned player/world attachments migrate forward. Safe for dedicated
@@ -39,5 +40,6 @@ public class EvaMod {
         modEventBus.addListener(ModNetworking::register);
 
         PetBootstrap.register();
+        AdventureBootstrap.register();
     }
 }

@@ -174,6 +174,8 @@ public class StuffedPet extends TamableAnimal {
         data.setPet(this.getUUID(), kind.name());
         data.incrementPetsAwakened();
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
+        com.eva.evamod.adventure.AdventureService.signal(
+                player, com.eva.evamod.adventure.AdventureService.Signal.AWAKEN_PET);
     }
 
     @Override
@@ -365,6 +367,8 @@ public class StuffedPet extends TamableAnimal {
             this.setBubbleText("glow!");
             player.sendSystemMessage(Component.literal(this.getName().getString() + " soft-glows for a little while.")
                     .withStyle(ChatFormatting.YELLOW));
+            com.eva.evamod.adventure.AdventureService.signal(
+                    player, com.eva.evamod.adventure.AdventureService.Signal.PET_GLOW);
         } else {
             this.glowTicksRemaining = 0;
             this.removeEffect(MobEffects.GLOWING);
@@ -419,6 +423,8 @@ public class StuffedPet extends TamableAnimal {
         player.sendSystemMessage(Component.literal(this.getName().getString() + " points toward a settlement near ")
                 .withStyle(ChatFormatting.GREEN)
                 .append(SettlementLocator.clickablePos(Component.empty(), target)));
+        com.eva.evamod.adventure.AdventureService.signal(
+                player, com.eva.evamod.adventure.AdventureService.Signal.PET_FIND);
         return 1;
     }
 

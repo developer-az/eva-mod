@@ -1,6 +1,7 @@
 package com.eva.evamod.player;
 
 import com.eva.evamod.ModVersions;
+import com.eva.evamod.adventure.AdventureProgress;
 import com.eva.evamod.mail.MailMessage;
 import com.eva.evamod.quest.Errand;
 import com.mojang.serialization.Codec;
@@ -31,7 +32,9 @@ public class PlayerEvaData {
             Codec.BOOL.optionalFieldOf("gotGuide", false).forGetter(d -> d.receivedGuideBook),
             Codec.STRING.optionalFieldOf("petEntityUuid").forGetter(d -> Optional.ofNullable(d.petEntityUuid)),
             Codec.STRING.optionalFieldOf("petKind").forGetter(d -> Optional.ofNullable(d.petKind)),
-            Codec.INT.optionalFieldOf("petsAwakened", 0).forGetter(d -> d.petsAwakened)
+            Codec.INT.optionalFieldOf("petsAwakened", 0).forGetter(d -> d.petsAwakened),
+            AdventureProgress.LIST_CODEC.optionalFieldOf("adventures", List.of()).forGetter(d -> d.adventures),
+            Codec.STRING.listOf().optionalFieldOf("landmarks", List.of()).forGetter(d -> d.landmarks)
     ).apply(instance, PlayerEvaData::fromCodec));
 
     private static final int SKIP_RADIUS_SQR = 20 * 20;
@@ -50,9 +53,12 @@ public class PlayerEvaData {
     private @Nullable String petEntityUuid;
     private @Nullable String petKind;
     private int petsAwakened;
+    private final List<AdventureProgress> adventures;
+    private final List<String> landmarks;
 
     public PlayerEvaData() {
-        this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false, null, null, 0);
+        this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false,
+                null, null, 0, List.of(), List.of());
     }
 
     public PlayerEvaData(
@@ -67,7 +73,9 @@ public class PlayerEvaData {
             boolean receivedGuideBook,
             @Nullable String petEntityUuid,
             @Nullable String petKind,
-            int petsAwakened) {
+            int petsAwakened,
+            List<AdventureProgress> adventures,
+            List<String> landmarks) {
         this.schemaVersion = schemaVersion;
         this.houses = new ArrayList<>(houses);
         this.locatedSkips = new ArrayList<>(locatedSkips);
@@ -80,6 +88,8 @@ public class PlayerEvaData {
         this.petEntityUuid = petEntityUuid;
         this.petKind = petKind;
         this.petsAwakened = Math.max(0, petsAwakened);
+        this.adventures = new ArrayList<>(adventures);
+        this.landmarks = new ArrayList<>(landmarks);
     }
 
     private static PlayerEvaData fromCodec(
@@ -94,11 +104,14 @@ public class PlayerEvaData {
             boolean gotGuide,
             Optional<String> petEntityUuid,
             Optional<String> petKind,
-            int petsAwakened) {
+            int petsAwakened,
+            List<AdventureProgress> adventures,
+            List<String> landmarks) {
         return new PlayerEvaData(
                 schema, houses, located, errand.orElse(null), mail, new HashSet<>(heartEvents),
                 lastMailDay, errandsDone, gotGuide,
-                petEntityUuid.orElse(null), petKind.orElse(null), petsAwakened);
+                petEntityUuid.orElse(null), petKind.orElse(null), petsAwakened,
+                adventures, landmarks);
     }
 
     public int schemaVersion() {
@@ -266,10 +279,60 @@ public class PlayerEvaData {
         this.petsAwakened++;
     }
 
+    public List<AdventureProgress> adventures() {
+        return adventures;
+    }
+
+    public @Nullable AdventureProgress findAdventure(String id) {
+        for (AdventureProgress p : adventures) {
+            if (p.id().equals(id)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public void upsertAdventure(AdventureProgress progress) {
+        for (int i = 0; i < adventures.size(); i++) {
+            if (adventures.get(i).id().equals(progress.id())) {
+                adventures.set(i, progress);
+                return;
+            }
+        }
+        adventures.add(progress);
+    }
+
+    public boolean isAdventureComplete(String id) {
+        AdventureProgress p = findAdventure(id);
+        return p != null && p.completed();
+    }
+
+    public int adventuresCompleted() {
+        int n = 0;
+        for (AdventureProgress p : adventures) {
+            if (p.completed()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    public List<String> landmarks() {
+        return landmarks;
+    }
+
+    public boolean discoverLandmark(String id) {
+        if (landmarks.contains(id)) {
+            return false;
+        }
+        landmarks.add(id);
+        return true;
+    }
+
     public PlayerEvaData copy() {
         return new PlayerEvaData(
                 schemaVersion, houses, locatedSkips, activeErrand, mail, seenHeartEvents,
                 lastMailDay, errandsCompleted, receivedGuideBook,
-                petEntityUuid, petKind, petsAwakened);
+                petEntityUuid, petKind, petsAwakened, adventures, landmarks);
     }
 }

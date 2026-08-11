@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 2, "max": 4 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:brush", "weight": 4 },
+        { "type": "minecraft:item", "name": "minecraft:sand", "weight": 5, "functions": [{ "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } }] },
+        { "type": "minecraft:item", "name": "minecraft:torch", "weight": 5, "functions": [{ "function": "minecraft:set_count", "count": { "min": 4, "max": 12 } }] },
+        { "type": "minecraft:item", "name": "minecraft:decorated_pot", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:suspicious_sand", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 2 }
+      ]
+    }
+  ]
+}

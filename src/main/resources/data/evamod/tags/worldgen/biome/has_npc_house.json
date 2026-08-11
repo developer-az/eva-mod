@@ -13,6 +13,15 @@
     "minecraft:mangrove_swamp",
     "minecraft:forest",
     "minecraft:birch_forest",
-    "minecraft:flower_forest"
+    "minecraft:flower_forest",
+    "#minecraft:is_ocean",
+    "#minecraft:is_beach",
+    "minecraft:beach",
+    "minecraft:river",
+    "minecraft:cherry_grove",
+    "#minecraft:is_badlands",
+    "minecraft:mushroom_fields",
+    "minecraft:dark_forest",
+    "#minecraft:is_mountain"
   ]
 }

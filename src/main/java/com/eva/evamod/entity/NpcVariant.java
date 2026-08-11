@@ -16,7 +16,13 @@ public enum NpcVariant {
     SNOWY("Snowy", new NpcJob[]{NpcJob.TRAPPER, NpcJob.FISHERMAN, NpcJob.MINER}),
     SAVANNA("Savanna", new NpcJob[]{NpcJob.SHEPHERD, NpcJob.NOMAD, NpcJob.CARTOGRAPHER}),
     JUNGLE("Jungle", new NpcJob[]{NpcJob.HERBALIST, NpcJob.FARMER, NpcJob.FISHERMAN}),
-    SWAMP("Swamp", new NpcJob[]{NpcJob.FISHERMAN, NpcJob.HERBALIST, NpcJob.MINER});
+    SWAMP("Swamp", new NpcJob[]{NpcJob.FISHERMAN, NpcJob.HERBALIST, NpcJob.MINER}),
+    OCEAN("Ocean", new NpcJob[]{NpcJob.FISHERMAN, NpcJob.CARTOGRAPHER, NpcJob.STORYTELLER}),
+    CHERRY("Cherry", new NpcJob[]{NpcJob.HERBALIST, NpcJob.BAKER, NpcJob.STORYTELLER}),
+    BADLANDS("Badlands", new NpcJob[]{NpcJob.MINER, NpcJob.ARCHAEOLOGIST, NpcJob.NOMAD}),
+    MUSHROOM("Mushroom", new NpcJob[]{NpcJob.HERBALIST, NpcJob.STORYTELLER, NpcJob.BEEKEEPER}),
+    DARK("Dark Forest", new NpcJob[]{NpcJob.LUMBERJACK, NpcJob.STORYTELLER, NpcJob.ARCHAEOLOGIST}),
+    MOUNTAIN("Mountain", new NpcJob[]{NpcJob.MINER, NpcJob.TRAPPER, NpcJob.BEEKEEPER});
 
     private final String displayName;
     private final NpcJob[] jobs;
@@ -46,6 +52,25 @@ public enum NpcVariant {
         if (biome.is(Biomes.SNOWY_PLAINS) || biome.is(Biomes.ICE_SPIKES) || biome.is(Biomes.SNOWY_TAIGA)
                 || biome.is(Biomes.SNOWY_BEACH) || biome.is(Biomes.GROVE) || biome.is(Biomes.SNOWY_SLOPES)) {
             return SNOWY;
+        }
+        if (biome.is(Biomes.CHERRY_GROVE)) {
+            return CHERRY;
+        }
+        if (biome.is(Biomes.MUSHROOM_FIELDS)) {
+            return MUSHROOM;
+        }
+        if (biome.is(Biomes.DARK_FOREST)) {
+            return DARK;
+        }
+        if (biome.is(BiomeTags.IS_BADLANDS)) {
+            return BADLANDS;
+        }
+        if (biome.is(BiomeTags.IS_OCEAN) || biome.is(BiomeTags.IS_BEACH)
+                || biome.is(Biomes.BEACH) || biome.is(Biomes.RIVER)) {
+            return OCEAN;
+        }
+        if (biome.is(BiomeTags.IS_MOUNTAIN)) {
+            return MOUNTAIN;
         }
         if (biome.is(BiomeTags.IS_JUNGLE)) {
             return JUNGLE;

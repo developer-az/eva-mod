@@ -48,6 +48,36 @@ public final class NpcNames {
                 "Reed", "Bruma", "Puddle", "Hazel", "Marsh", "Wisp", "Cinder", "Frogge", "Lichen", "Nettle",
                 "Dusk", "Briar", "Mire", "Thistle", "Pebble", "Glimmer", "Sedge", "Wren", "Toad", "Fern",
                 "Slate", "Pond", "Ivy", "Cricket", "Fog", "Bramble"});
+        NAMES.put(NpcVariant.OCEAN, new String[]{
+                "Marin", "Coral", "Tide", "Pearl", "Kai", "Nerida", "Brine", "Shelly", "Wave", "Anchor",
+                "Delta", "Siren", "Reef", "Salten", "Marina", "Cove", "Drift", "Kelp", "Harbor", "Foam",
+                "Nori", "Lumen", "Spray", "Captain", "Isla", "Bay", "Current", "Pike", "Oyster", "Finn",
+                "Aqua", "Merrow", "Salty", "Lagoon", "Wharf", "Nautilus"});
+        NAMES.put(NpcVariant.CHERRY, new String[]{
+                "Sakura", "Hanami", "Blossom", "Petal", "Momo", "Yuki", "Haru", "Aya", "Ren", "Kohana",
+                "Sora", "Hana", "Kiku", "Mei", "Tsubaki", "Akira", "Nori", "Sumi", "Kaito", "Rin",
+                "Pinkie", "Bloom", "Cherry", "Ume", "Asa", "Mio", "Kenji", "Fuji", "Saki", "Tomoe",
+                "Lila", "Orchid", "Plum", "Spring", "Petunia", "Kaori"});
+        NAMES.put(NpcVariant.BADLANDS, new String[]{
+                "Dusty", "Clay", "Rust", "Mesa", "Canyon", "Cinder", "Adobe", "Redrock", "Sage", "Butch",
+                "Tess", "Ridge", "Flint", "Sienna", "Outlaw", "Marl", "Terra", "Bluff", "Copper", "Dryden",
+                "Sundance", "Raven", "Ochre", "Spur", "Cordova", "Pueblo", "Arroyo", "Grit", "Vega", "Bronco",
+                "Sierra", "Quarry", "Tumble", "Ash", "Horizon", "Mesquite"});
+        NAMES.put(NpcVariant.MUSHROOM, new String[]{
+                "Mycel", "Shroom", "Morel", "Truffle", "Spore", "Cap", "Puff", "Gilly", "Mossy", "Fungus",
+                "Dotty", "Amanita", "Button", "Chanter", "Lumen", "Softcap", "Nibble", "Wisp", "Umber", "Porto",
+                "Glowcap", "Velvet", "Toadstool", "Inkcap", "Fairy", "Ringlet", "Dew", "Misty", "Boletus", "Piko",
+                "Saffron", "Enoki", "Shiitake", "Polka", "Nimbus", "Sprout"});
+        NAMES.put(NpcVariant.DARK, new String[]{
+                "Shade", "Umbra", "Thorn", "Nightshade", "Raven", "Hollow", "Ebony", "Grim", "Ashen", "Nocturne",
+                "Briar", "Vesper", "Crow", "Murkwood", "Silva", "Gloom", "Twilight", "Oakheart", "Rowan", "Sable",
+                "Dusk", "Wraith", "Ivy", "Morwen", "Blackbriar", "Lurk", "Canopy", "Fernshadow", "Nyx", "Hedgerow",
+                "Quiet", "Deepwood", "Mossbane", "Elder", "Root", "Whisper"});
+        NAMES.put(NpcVariant.MOUNTAIN, new String[]{
+                "Summit", "Cliff", "Granite", "Peak", "Alpine", "Stone", "Ridge", "Tor", "Echo", "Avalanche",
+                "Boulder", "Crag", "Pike", "Helena", "Flint", "Cascade", "Sherpa", "Yeti", "Frostpeak", "Slate",
+                "Kestrel", "Horn", "Mira", "Basalt", "Heather", "Windward", "Talus", "Ivo", "Sierra", "Quarry",
+                "Hawk", "Glacier", "Berg", "Astra", "Cairn", "Skyline"});
     }
 
     public static String pick(NpcVariant variant, RandomSource random) {

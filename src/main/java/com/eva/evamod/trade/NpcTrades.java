@@ -107,6 +107,34 @@ public final class NpcTrades {
                 new TradeTemplate(Items.EMERALD, 2, Items.PAINTING, 1, 8),
                 new TradeTemplate(Items.EMERALD, 2, Items.CAMPFIRE, 1, 6),
                 new TradeTemplate(Items.EMERALD, 8, Items.NAME_TAG, 1, 2));
+        pool(NpcJob.BAKER,
+                new TradeTemplate(Items.WHEAT, 20, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.SUGAR, 16, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.EMERALD, 1, Items.BREAD, 8, 12),
+                new TradeTemplate(Items.EMERALD, 1, Items.COOKIE, 10, 12),
+                new TradeTemplate(Items.EMERALD, 3, Items.CAKE, 1, 4),
+                new TradeTemplate(Items.EMERALD, 2, Items.PUMPKIN_PIE, 1, 8));
+        pool(NpcJob.BEEKEEPER,
+                new TradeTemplate(Items.HONEYCOMB, 4, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.POPPY, 12, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.EMERALD, 2, Items.HONEY_BOTTLE, 2, 8),
+                new TradeTemplate(Items.EMERALD, 3, Items.HONEYCOMB, 3, 6),
+                new TradeTemplate(Items.EMERALD, 4, Items.BEEHIVE, 1, 3),
+                new TradeTemplate(Items.EMERALD, 1, Items.HONEY_BLOCK, 1, 6));
+        pool(NpcJob.STORYTELLER,
+                new TradeTemplate(Items.PAPER, 24, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.BOOK, 4, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.EMERALD, 2, Items.BOOK, 2, 8),
+                new TradeTemplate(Items.EMERALD, 3, Items.WRITABLE_BOOK, 1, 6),
+                new TradeTemplate(Items.EMERALD, 1, Items.INK_SAC, 4, 12),
+                new TradeTemplate(Items.EMERALD, 5, Items.LECTERN, 1, 3));
+        pool(NpcJob.ARCHAEOLOGIST,
+                new TradeTemplate(Items.BRUSH, 1, Items.EMERALD, 2, 6),
+                new TradeTemplate(Items.SAND, 32, Items.EMERALD, 1, 12),
+                new TradeTemplate(Items.EMERALD, 3, Items.BRUSH, 1, 4),
+                new TradeTemplate(Items.EMERALD, 2, Items.TORCH, 16, 12),
+                new TradeTemplate(Items.EMERALD, 4, Items.DECORATED_POT, 1, 4),
+                new TradeTemplate(Items.EMERALD, 2, Items.SUSPICIOUS_SAND, 2, 6));
     }
 
     public static MerchantOffers buildDailyOffers(NpcJob job, long day, UUID npcId) {

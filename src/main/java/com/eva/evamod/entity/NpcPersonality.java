@@ -13,7 +13,11 @@ public enum NpcPersonality {
     DRAMATIC("Dramatic"),
     GRUMPY("Grumpy"),
     SLEEPY("Sleepy"),
-    CURIOUS("Curious");
+    CURIOUS("Curious"),
+    KIND("Kind"),
+    WITTY("Witty"),
+    MYSTERIOUS("Mysterious"),
+    BRAVE("Brave");
 
     private final String displayName;
 
@@ -28,9 +32,9 @@ public enum NpcPersonality {
     /** How often (roughly) this NPC seeks out a neighbor for a chat. Lower = more social. */
     public int socializeRarity() {
         return switch (this) {
-            case CHEERFUL, CURIOUS -> 400;
-            case DRAMATIC -> 600;
-            case GRUMPY, SLEEPY -> 1600;
+            case CHEERFUL, CURIOUS, KIND, WITTY -> 400;
+            case DRAMATIC, BRAVE -> 600;
+            case GRUMPY, SLEEPY, MYSTERIOUS -> 1600;
             case SHY -> 1200;
         };
     }

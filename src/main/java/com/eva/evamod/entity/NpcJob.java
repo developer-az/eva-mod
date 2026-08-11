@@ -33,7 +33,17 @@ public enum NpcJob {
     GLASSBLOWER("Glassblower", Items.GLASS_BOTTLE, Blocks.FURNACE,
             state -> state.is(BlockTags.SAND)),
     NOMAD("Nomad", Items.STICK, Blocks.CAULDRON,
-            state -> false);
+            state -> false),
+    BAKER("Baker", Items.BREAD, Blocks.SMOKER,
+            state -> state.getBlock() instanceof CropBlock || state.is(Blocks.FARMLAND)
+                    || state.is(Blocks.WHEAT)),
+    BEEKEEPER("Beekeeper", Items.HONEYCOMB, Blocks.BEEHIVE,
+            state -> state.is(BlockTags.FLOWERS) || state.is(Blocks.BEE_NEST) || state.is(Blocks.BEEHIVE)),
+    STORYTELLER("Storyteller", Items.BOOK, Blocks.LECTERN,
+            state -> false),
+    ARCHAEOLOGIST("Archaeologist", Items.BRUSH, Blocks.SUSPICIOUS_SAND,
+            state -> state.is(Blocks.SUSPICIOUS_SAND) || state.is(Blocks.SUSPICIOUS_GRAVEL)
+                    || state.is(Blocks.SANDSTONE) || state.is(Blocks.DECORATED_POT));
 
     private final String displayName;
     private final Item workItem;

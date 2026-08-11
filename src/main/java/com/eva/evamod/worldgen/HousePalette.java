@@ -69,6 +69,48 @@ public record HousePalette(
                     : new HousePalette(s(Blocks.MUD_BRICKS), s(Blocks.MANGROVE_PLANKS), s(Blocks.MANGROVE_LOG),
                     s(Blocks.MANGROVE_PLANKS), s(Blocks.MANGROVE_PLANKS), s(Blocks.MANGROVE_SLAB),
                     s(Blocks.GLASS), Blocks.MANGROVE_DOOR, Blocks.BED.pick(DyeColor.PURPLE));
+            case OCEAN -> b
+                    ? new HousePalette(s(Blocks.PRISMARINE), s(Blocks.DARK_OAK_PLANKS), s(Blocks.DARK_OAK_LOG),
+                    s(Blocks.PRISMARINE_BRICKS), s(Blocks.DARK_PRISMARINE), s(Blocks.DARK_PRISMARINE_SLAB),
+                    s(Blocks.GLASS), Blocks.DARK_OAK_DOOR, Blocks.BED.pick(DyeColor.CYAN))
+                    : new HousePalette(s(Blocks.PRISMARINE), s(Blocks.SPRUCE_PLANKS), s(Blocks.SPRUCE_LOG),
+                    s(Blocks.PRISMARINE), s(Blocks.PRISMARINE_BRICKS), s(Blocks.PRISMARINE_SLAB),
+                    s(Blocks.GLASS), Blocks.SPRUCE_DOOR, Blocks.BED.pick(DyeColor.LIGHT_BLUE));
+            case CHERRY -> b
+                    ? new HousePalette(s(Blocks.COBBLESTONE), s(Blocks.CHERRY_PLANKS), s(Blocks.STRIPPED_CHERRY_LOG),
+                    s(Blocks.CHERRY_PLANKS), s(Blocks.CHERRY_PLANKS), s(Blocks.CHERRY_SLAB),
+                    s(Blocks.GLASS), Blocks.CHERRY_DOOR, Blocks.BED.pick(DyeColor.PINK))
+                    : new HousePalette(s(Blocks.COBBLESTONE), s(Blocks.CHERRY_PLANKS), s(Blocks.CHERRY_LOG),
+                    s(Blocks.CHERRY_PLANKS), s(Blocks.STRIPPED_CHERRY_LOG), s(Blocks.CHERRY_SLAB),
+                    s(Blocks.GLASS), Blocks.CHERRY_DOOR, Blocks.BED.pick(DyeColor.MAGENTA));
+            case BADLANDS -> b
+                    ? new HousePalette(s(Blocks.RED_SANDSTONE), s(Blocks.SMOOTH_RED_SANDSTONE), s(Blocks.CUT_RED_SANDSTONE),
+                    s(Blocks.DYED_TERRACOTTA.pick(DyeColor.ORANGE)), s(Blocks.RED_SANDSTONE), s(Blocks.RED_SANDSTONE_SLAB),
+                    s(Blocks.GLASS), Blocks.ACACIA_DOOR, Blocks.BED.pick(DyeColor.ORANGE))
+                    : new HousePalette(s(Blocks.RED_SANDSTONE), s(Blocks.SMOOTH_RED_SANDSTONE), s(Blocks.CUT_RED_SANDSTONE),
+                    s(Blocks.TERRACOTTA), s(Blocks.SMOOTH_RED_SANDSTONE), s(Blocks.SMOOTH_RED_SANDSTONE_SLAB),
+                    s(Blocks.GLASS), Blocks.ACACIA_DOOR, Blocks.BED.pick(DyeColor.BROWN));
+            case MUSHROOM -> b
+                    ? new HousePalette(s(Blocks.MYCELIUM), s(Blocks.BIRCH_PLANKS), s(Blocks.STRIPPED_BIRCH_LOG),
+                    s(Blocks.RED_MUSHROOM_BLOCK), s(Blocks.BIRCH_PLANKS), s(Blocks.BIRCH_SLAB),
+                    s(Blocks.GLASS), Blocks.BIRCH_DOOR, Blocks.BED.pick(DyeColor.RED))
+                    : new HousePalette(s(Blocks.MYCELIUM), s(Blocks.BIRCH_PLANKS), s(Blocks.BIRCH_LOG),
+                    s(Blocks.BROWN_MUSHROOM_BLOCK), s(Blocks.MUSHROOM_STEM), s(Blocks.BIRCH_SLAB),
+                    s(Blocks.GLASS), Blocks.BIRCH_DOOR, Blocks.BED.pick(DyeColor.PURPLE));
+            case DARK -> b
+                    ? new HousePalette(s(Blocks.MOSSY_COBBLESTONE), s(Blocks.DARK_OAK_PLANKS), s(Blocks.STRIPPED_DARK_OAK_LOG),
+                    s(Blocks.DARK_OAK_PLANKS), s(Blocks.DARK_OAK_PLANKS), s(Blocks.DARK_OAK_SLAB),
+                    s(Blocks.GLASS), Blocks.DARK_OAK_DOOR, Blocks.BED.pick(DyeColor.BLACK))
+                    : new HousePalette(s(Blocks.COBBLESTONE), s(Blocks.DARK_OAK_PLANKS), s(Blocks.DARK_OAK_LOG),
+                    s(Blocks.DARK_OAK_LOG), s(Blocks.DARK_OAK_PLANKS), s(Blocks.DARK_OAK_SLAB),
+                    s(Blocks.GLASS), Blocks.DARK_OAK_DOOR, Blocks.BED.pick(DyeColor.GRAY));
+            case MOUNTAIN -> b
+                    ? new HousePalette(s(Blocks.STONE_BRICKS), s(Blocks.SPRUCE_PLANKS), s(Blocks.STRIPPED_SPRUCE_LOG),
+                    s(Blocks.STONE_BRICKS), s(Blocks.SPRUCE_PLANKS), s(Blocks.SPRUCE_SLAB),
+                    s(Blocks.GLASS), Blocks.SPRUCE_DOOR, Blocks.BED.pick(DyeColor.LIGHT_GRAY))
+                    : new HousePalette(s(Blocks.COBBLESTONE), s(Blocks.SPRUCE_PLANKS), s(Blocks.SPRUCE_LOG),
+                    s(Blocks.ANDESITE), s(Blocks.COBBLED_DEEPSLATE), s(Blocks.COBBLED_DEEPSLATE_SLAB),
+                    s(Blocks.GLASS), Blocks.SPRUCE_DOOR, Blocks.BED.pick(DyeColor.BLUE));
         };
     }
 

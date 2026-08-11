@@ -273,6 +273,26 @@ public final class DialogueManager {
                 "Do you think fish know they're wet? I think about this a lot.",
                 "Every chest I see, I wonder what's inside. Every. Single. One.",
                 "Bring me rumors. I'll trade you better rumors."});
+        PERSONALITY_TALK.put(NpcPersonality.KIND, new String[]{
+                "If you need a spare loaf or a kind word, my door is open.",
+                "Everyone deserves a warm hello. Even the creepers. Figuratively.",
+                "I left soup on for whoever looks tired. That includes you, %PLAYER%.",
+                "Kindness compounds faster than emeralds. I keep receipts."});
+        PERSONALITY_TALK.put(NpcPersonality.WITTY, new String[]{
+                "I'd tell you a joke about construction, but I'm still working on it.",
+                "My humor is free. My trades are not. Balance, %PLAYER%.",
+                "They say I have a sharp tongue. Good — dull ones make poor tools.",
+                "If sarcasm were a crop, I'd be the richest farmer in the %BIOME%."});
+        PERSONALITY_TALK.put(NpcPersonality.MYSTERIOUS, new String[]{
+                "Some paths only appear when the moon is... never mind.",
+                "I keep three secrets. You've earned approximately zero-point-four.",
+                "The fog knows my name. I prefer it that way.",
+                "Ask me later. Or don't. Timing is everything."});
+        PERSONALITY_TALK.put(NpcPersonality.BRAVE, new String[]{
+                "Fear is just excitement wearing a heavier coat.",
+                "I once stared down a skeleton. It blinked first. Probably.",
+                "If trouble comes, stand behind me — or beside me. Standing matters.",
+                "Courage isn't loud. It's showing up when the path gets steep."});
 
         JOB_SMALL_TALK.put(NpcJob.FARMER, new String[]{
                 "The crops practically grow themselves this season.",
@@ -326,6 +346,30 @@ public final class DialogueManager {
                 "The road teaches more than any book.",
                 "I've traded with folk from deserts to glaciers. You meet all sorts.",
                 "Settling down was the strangest journey of all."});
+        JOB_SMALL_TALK.put(NpcJob.BAKER, new String[]{
+                "The smell of fresh bread solves most arguments. Scientifically.",
+                "Kneading dough is meditation with flour on your nose.",
+                "I burned a loaf once. Never again. The smoke told on me.",
+                "Sweet or savory? Wrong question. Both. Always both.",
+                "Wheat, patience, and a friendly oven — that's the whole recipe."});
+        JOB_SMALL_TALK.put(NpcJob.BEEKEEPER, new String[]{
+                "The bees and I have a treaty: I give flowers, they give gold.",
+                "Never swat near a hive. Diplomacy first.",
+                "Honeycomb geometry puts architects to shame.",
+                "If you hear buzzing, smile. They're working harder than we are.",
+                "A calm beekeeper makes calm bees. Mostly."});
+        JOB_SMALL_TALK.put(NpcJob.STORYTELLER, new String[]{
+                "Every traveler leaves a chapter. You're mid-paragraph, %PLAYER%.",
+                "I collect endings. Beginnings are easier to find.",
+                "Pull up a seat — the best stories start with 'you won't believe this.'",
+                "Books are quiet friends. Lectures are louder ones.",
+                "Once upon a time is my favorite spell."});
+        JOB_SMALL_TALK.put(NpcJob.ARCHAEOLOGIST, new String[]{
+                "Brush gently. History bruises easily.",
+                "Pottery shards gossip if you listen long enough.",
+                "Suspicious sand is just shy treasure.",
+                "I dug up a mystery yesterday. Still unnamed. Still wonderful.",
+                "The past isn't gone — it's underfoot, waiting."});
 
         BIOME_SMALL_TALK.put(NpcVariant.PLAINS, new String[]{
                 "Nothing beats a plains sunset. Nothing.",
@@ -355,6 +399,30 @@ public final class DialogueManager {
                 "The bog bubbles more than usual today. Interesting.",
                 "Frogsong all night long. You get used to it. Mostly.",
                 "The mist here keeps secrets. So do I."});
+        BIOME_SMALL_TALK.put(NpcVariant.OCEAN, new String[]{
+                "Salt air cures almost everything except homesickness.",
+                "The tide brings news — bottles, driftwood, rumors.",
+                "Watch the horizon. Something always arrives eventually."});
+        BIOME_SMALL_TALK.put(NpcVariant.CHERRY, new String[]{
+                "Petals fall like confetti that never needs cleaning up. Almost.",
+                "Cherry blossom season makes everyone softer. Even me.",
+                "Pink skies, pink paths, pink moods. Welcome."});
+        BIOME_SMALL_TALK.put(NpcVariant.BADLANDS, new String[]{
+                "The mesas keep score of every sunset.",
+                "Red dust gets everywhere. Including your stories.",
+                "Water is wealth out here. Shade is luxury."});
+        BIOME_SMALL_TALK.put(NpcVariant.MUSHROOM, new String[]{
+                "Don't step on the big ones. They have feelings. Allegedly.",
+                "Mycelium networks gossip faster than villagers.",
+                "Night glows gently here. No torches required — almost."});
+        BIOME_SMALL_TALK.put(NpcVariant.DARK, new String[]{
+                "The canopy drinks the daylight. We learned to sip what's left.",
+                "Roots run deep. So do old stories.",
+                "If you hear a twig snap, it was probably just the forest saying hello."});
+        BIOME_SMALL_TALK.put(NpcVariant.MOUNTAIN, new String[]{
+                "Thin air, thick views. Fair trade.",
+                "Peaks teach patience — and stronger calves.",
+                "The wind up here edits every sentence. Shorter is better."});
 
         SEASON_TALK.put(SeasonCalendar.Season.SPRING, new String[]{
                 "Spring air makes even grumps plant flowers. Allegedly.",

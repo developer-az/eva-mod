@@ -92,6 +92,14 @@ public enum GiftTaste {
                     || item == Items.INK_SAC;
             case GLASSBLOWER -> item == Items.GLASS || item == Items.SAND || item == Items.GLASS_BOTTLE;
             case NOMAD -> item == Items.BREAD || item == Items.LEATHER || item == Items.ENDER_PEARL;
+            case BAKER -> item == Items.WHEAT || item == Items.SUGAR || item == Items.EGG
+                    || item == Items.MILK_BUCKET || item == Items.HONEY_BOTTLE;
+            case BEEKEEPER -> item == Items.HONEYCOMB || item == Items.HONEY_BOTTLE || item == Items.POPPY
+                    || item == Items.DANDELION;
+            case STORYTELLER -> item == Items.BOOK || item == Items.WRITABLE_BOOK || item == Items.PAPER
+                    || item == Items.INK_SAC;
+            case ARCHAEOLOGIST -> item == Items.BRUSH || item == Items.ARMS_UP_POTTERY_SHERD
+                    || item == Items.SAND || item == Items.TORCHFLOWER;
         };
     }
 
@@ -100,6 +108,8 @@ public enum GiftTaste {
             case FISHERMAN -> item == Items.COOKED_COD || item == Items.COOKED_SALMON; // prefers fresh
             case HERBALIST -> item == Items.FERMENTED_SPIDER_EYE;
             case MINER -> item == Items.DIRT;
+            case BAKER -> item == Items.POISONOUS_POTATO;
+            case STORYTELLER -> item == Items.ROTTEN_FLESH;
             default -> false;
         };
     }
@@ -112,6 +122,10 @@ public enum GiftTaste {
             case GRUMPY -> item == Items.BAKED_POTATO || item == Items.COOKED_BEEF || item == Items.COAL;
             case SLEEPY -> item == Items.HONEY_BOTTLE || item == Items.MILK_BUCKET || item == Items.WOOL.pick(DyeColor.WHITE);
             case CURIOUS -> item == Items.ENDER_PEARL || item == Items.SPYGLASS || item == Items.BRUSH;
+            case KIND -> item == Items.BREAD || item == Items.APPLE || item == Items.GOLDEN_CARROT;
+            case WITTY -> item == Items.COOKIE || item == Items.PAPER || item == Items.INK_SAC;
+            case MYSTERIOUS -> item == Items.ENDER_EYE || item == Items.ECHO_SHARD || item == Items.AMETHYST_SHARD;
+            case BRAVE -> item == Items.IRON_SWORD || item == Items.SHIELD || item == Items.COOKED_BEEF;
         };
     }
 }

@@ -16,6 +16,12 @@ public final class ModLootTables {
     public static final ResourceKey<LootTable> HOUSE_SAVANNA = key("chests/house_savanna");
     public static final ResourceKey<LootTable> HOUSE_JUNGLE = key("chests/house_jungle");
     public static final ResourceKey<LootTable> HOUSE_SWAMP = key("chests/house_swamp");
+    public static final ResourceKey<LootTable> HOUSE_OCEAN = key("chests/house_ocean");
+    public static final ResourceKey<LootTable> HOUSE_CHERRY = key("chests/house_cherry");
+    public static final ResourceKey<LootTable> HOUSE_BADLANDS = key("chests/house_badlands");
+    public static final ResourceKey<LootTable> HOUSE_MUSHROOM = key("chests/house_mushroom");
+    public static final ResourceKey<LootTable> HOUSE_DARK = key("chests/house_dark");
+    public static final ResourceKey<LootTable> HOUSE_MOUNTAIN = key("chests/house_mountain");
 
     public static final ResourceKey<LootTable> JOB_FARMER = key("chests/job_farmer");
     public static final ResourceKey<LootTable> JOB_SHEPHERD = key("chests/job_shepherd");
@@ -27,6 +33,10 @@ public final class ModLootTables {
     public static final ResourceKey<LootTable> JOB_CARTOGRAPHER = key("chests/job_cartographer");
     public static final ResourceKey<LootTable> JOB_GLASSBLOWER = key("chests/job_glassblower");
     public static final ResourceKey<LootTable> JOB_NOMAD = key("chests/job_nomad");
+    public static final ResourceKey<LootTable> JOB_BAKER = key("chests/job_baker");
+    public static final ResourceKey<LootTable> JOB_BEEKEEPER = key("chests/job_beekeeper");
+    public static final ResourceKey<LootTable> JOB_STORYTELLER = key("chests/job_storyteller");
+    public static final ResourceKey<LootTable> JOB_ARCHAEOLOGIST = key("chests/job_archaeologist");
 
     public static ResourceKey<LootTable> forVariant(NpcVariant variant) {
         return switch (variant) {
@@ -36,6 +46,12 @@ public final class ModLootTables {
             case SAVANNA -> HOUSE_SAVANNA;
             case JUNGLE -> HOUSE_JUNGLE;
             case SWAMP -> HOUSE_SWAMP;
+            case OCEAN -> HOUSE_OCEAN;
+            case CHERRY -> HOUSE_CHERRY;
+            case BADLANDS -> HOUSE_BADLANDS;
+            case MUSHROOM -> HOUSE_MUSHROOM;
+            case DARK -> HOUSE_DARK;
+            case MOUNTAIN -> HOUSE_MOUNTAIN;
             default -> HOUSE_PLAINS;
         };
     }
@@ -52,6 +68,10 @@ public final class ModLootTables {
             case CARTOGRAPHER -> JOB_CARTOGRAPHER;
             case GLASSBLOWER -> JOB_GLASSBLOWER;
             case NOMAD -> JOB_NOMAD;
+            case BAKER -> JOB_BAKER;
+            case BEEKEEPER -> JOB_BEEKEEPER;
+            case STORYTELLER -> JOB_STORYTELLER;
+            case ARCHAEOLOGIST -> JOB_ARCHAEOLOGIST;
         };
     }
 

@@ -1,8 +1,7 @@
 package com.eva.evamod.player;
 
 import com.eva.evamod.ModVersions;
-import com.eva.evamod.adventure.AdventureProgress;
-import com.eva.evamod.mail.MailMessage;
+import com.eva.evamod.adventure.AdventureProgress;import com.eva.evamod.mail.MailMessage;
 import com.eva.evamod.quest.Errand;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,8 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import javax.annotation.Nullable;
-import net.minecraft.core.BlockPos;
+import javax.annotation.Nullable;import net.minecraft.core.BlockPos;
 
 /**
  * Per-player Eva state. Schema-versioned for forward-compatible saves.
@@ -34,8 +32,7 @@ public class PlayerEvaData {
             Codec.STRING.optionalFieldOf("petKind").forGetter(d -> Optional.ofNullable(d.petKind)),
             Codec.INT.optionalFieldOf("petsAwakened", 0).forGetter(d -> d.petsAwakened),
             AdventureProgress.LIST_CODEC.optionalFieldOf("adventures", List.of()).forGetter(d -> d.adventures),
-            Codec.STRING.listOf().optionalFieldOf("landmarks", List.of()).forGetter(d -> d.landmarks)
-    ).apply(instance, PlayerEvaData::fromCodec));
+            Codec.STRING.listOf().optionalFieldOf("landmarks", List.of()).forGetter(d -> d.landmarks)    ).apply(instance, PlayerEvaData::fromCodec));
 
     private static final int SKIP_RADIUS_SQR = 20 * 20;
     private static final int MAX_LOCATED = 128;
@@ -58,8 +55,7 @@ public class PlayerEvaData {
 
     public PlayerEvaData() {
         this(ModVersions.PLAYER_SCHEMA, List.of(), List.of(), null, List.of(), Set.of(), -1L, 0, false,
-                null, null, 0, List.of(), List.of());
-    }
+                null, null, 0, List.of(), List.of());    }
 
     public PlayerEvaData(
             int schemaVersion,
@@ -75,8 +71,7 @@ public class PlayerEvaData {
             @Nullable String petKind,
             int petsAwakened,
             List<AdventureProgress> adventures,
-            List<String> landmarks) {
-        this.schemaVersion = schemaVersion;
+            List<String> landmarks) {        this.schemaVersion = schemaVersion;
         this.houses = new ArrayList<>(houses);
         this.locatedSkips = new ArrayList<>(locatedSkips);
         this.activeErrand = activeErrand;
@@ -89,8 +84,7 @@ public class PlayerEvaData {
         this.petKind = petKind;
         this.petsAwakened = Math.max(0, petsAwakened);
         this.adventures = new ArrayList<>(adventures);
-        this.landmarks = new ArrayList<>(landmarks);
-    }
+        this.landmarks = new ArrayList<>(landmarks);    }
 
     private static PlayerEvaData fromCodec(
             int schema,
@@ -111,8 +105,7 @@ public class PlayerEvaData {
                 schema, houses, located, errand.orElse(null), mail, new HashSet<>(heartEvents),
                 lastMailDay, errandsDone, gotGuide,
                 petEntityUuid.orElse(null), petKind.orElse(null), petsAwakened,
-                adventures, landmarks);
-    }
+                adventures, landmarks);    }
 
     public int schemaVersion() {
         return schemaVersion;
@@ -333,6 +326,5 @@ public class PlayerEvaData {
         return new PlayerEvaData(
                 schemaVersion, houses, locatedSkips, activeErrand, mail, seenHeartEvents,
                 lastMailDay, errandsCompleted, receivedGuideBook,
-                petEntityUuid, petKind, petsAwakened, adventures, landmarks);
-    }
+                petEntityUuid, petKind, petsAwakened, adventures, landmarks);    }
 }

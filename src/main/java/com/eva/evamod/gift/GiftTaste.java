@@ -99,8 +99,7 @@ public enum GiftTaste {
             case STORYTELLER -> item == Items.BOOK || item == Items.WRITABLE_BOOK || item == Items.PAPER
                     || item == Items.INK_SAC;
             case ARCHAEOLOGIST -> item == Items.BRUSH || item == Items.ARMS_UP_POTTERY_SHERD
-                    || item == Items.SAND || item == Items.TORCHFLOWER;
-        };
+                    || item == Items.SAND || item == Items.TORCHFLOWER;        };
     }
 
     private static boolean jobDislikes(NpcJob job, Item item) {
@@ -109,8 +108,7 @@ public enum GiftTaste {
             case HERBALIST -> item == Items.FERMENTED_SPIDER_EYE;
             case MINER -> item == Items.DIRT;
             case BAKER -> item == Items.POISONOUS_POTATO;
-            case STORYTELLER -> item == Items.ROTTEN_FLESH;
-            default -> false;
+            case STORYTELLER -> item == Items.ROTTEN_FLESH;            default -> false;
         };
     }
 
@@ -125,7 +123,6 @@ public enum GiftTaste {
             case KIND -> item == Items.BREAD || item == Items.APPLE || item == Items.GOLDEN_CARROT;
             case WITTY -> item == Items.COOKIE || item == Items.PAPER || item == Items.INK_SAC;
             case MYSTERIOUS -> item == Items.ENDER_EYE || item == Items.ECHO_SHARD || item == Items.AMETHYST_SHARD;
-            case BRAVE -> item == Items.IRON_SWORD || item == Items.SHIELD || item == Items.COOKED_BEEF;
-        };
+            case BRAVE -> item == Items.IRON_SWORD || item == Items.SHIELD || item == Items.COOKED_BEEF;        };
     }
 }

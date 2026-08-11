@@ -22,7 +22,6 @@ public final class ModVersions {
     public static final int WORLD_SCHEMA = 1;
     /** Play networking protocol (PayloadRegistrar). */
     public static final int NETWORK = 3;
-
     /** First production line that is supported. 1.x jars are outdated. */
     public static final String MIN_SUPPORTED_DISPLAY = "2.0.0";
 

@@ -23,7 +23,6 @@
 - Player schema **3**, network **3**, display **3.0.0 Companions**
 - Saves from 2.x migrate forward via optional codec fields
 - Primer book gains Pets + Adventures pages
-
 ## 2.1.0 — Homestead continuity
 
 ### Pre-mod / explored worlds

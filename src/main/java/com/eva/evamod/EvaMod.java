@@ -15,8 +15,7 @@ import org.slf4j.Logger;
 
 /**
  * Eva Mod Companions — biome NPCs, stuffed-animal pets, multi-step adventures,
- * towns, hearts, seasons, errands, mail, and Homestead Primer.
- * <p>
+ * towns, hearts, seasons, errands, mail, and Homestead Primer. * <p>
  * Compatibility: registry/network IDs use {@code evamod}; no global mixins;
  * schema-versioned player/world attachments migrate forward. Safe for dedicated
  * multiplayer (server authority; login work is O(1) — no structure scans on join).

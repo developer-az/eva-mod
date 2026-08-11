@@ -293,7 +293,6 @@ public final class DialogueManager {
                 "I once stared down a skeleton. It blinked first. Probably.",
                 "If trouble comes, stand behind me — or beside me. Standing matters.",
                 "Courage isn't loud. It's showing up when the path gets steep."});
-
         JOB_SMALL_TALK.put(NpcJob.FARMER, new String[]{
                 "The crops practically grow themselves this season.",
                 "A good harvest starts with good soil, I always say.",
@@ -423,7 +422,6 @@ public final class DialogueManager {
                 "Thin air, thick views. Fair trade.",
                 "Peaks teach patience — and stronger calves.",
                 "The wind up here edits every sentence. Shorter is better."});
-
         SEASON_TALK.put(SeasonCalendar.Season.SPRING, new String[]{
                 "Spring air makes even grumps plant flowers. Allegedly.",
                 "Shoots are pushing up. Hope always looks like green sprouts.",

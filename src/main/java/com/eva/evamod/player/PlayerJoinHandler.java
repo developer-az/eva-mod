@@ -50,7 +50,6 @@ public final class PlayerJoinHandler {
         PlayerEvaData data = player.getData(ModAttachments.PLAYER_DATA);
         com.eva.evamod.adventure.AdventureService.ensureStarted(player, data);
         data = player.getData(ModAttachments.PLAYER_DATA);
-
         if (!TIPPED_THIS_SESSION.add(player.getUUID())) {
             return;
         }
@@ -61,8 +60,7 @@ public final class PlayerJoinHandler {
                 .append(Component.literal(" book, or type ").withStyle(ChatFormatting.GRAY))
                 .append(suggest("/evamod", "Help"))
                 .append(Component.literal(" · ").withStyle(ChatFormatting.DARK_GRAY))
-                .append(suggest("/evamod adventure", "Stories"));
-        player.sendSystemMessage(tip);
+                .append(suggest("/evamod adventure", "Stories"));        player.sendSystemMessage(tip);
 
         if (world.likelyLegacyWorld() && !world.founderHomesteadPlaced()) {
             player.sendSystemMessage(Component.literal(

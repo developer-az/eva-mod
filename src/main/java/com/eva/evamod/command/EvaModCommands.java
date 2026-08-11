@@ -4,8 +4,7 @@ import com.eva.evamod.EvaMod;
 import com.eva.evamod.ModVersions;
 import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.entity.BiomeNpc;
-import com.eva.evamod.entity.StuffedPet;
-import com.eva.evamod.friendship.Hearts;
+import com.eva.evamod.entity.StuffedPet;import com.eva.evamod.friendship.Hearts;
 import com.eva.evamod.mail.MailMessage;
 import com.eva.evamod.mail.MailService;
 import com.eva.evamod.player.GuideBookService;
@@ -112,7 +111,6 @@ public final class EvaModCommands {
     private static final List<String> KNOWN_COMMANDS =
             List.of("help", "locate", "town", "near", "journal", "visit", "mail", "calendar", "errand", "book",
                     "settle", "version", "pet", "adventure");
-
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
@@ -257,8 +255,7 @@ public final class EvaModCommands {
                         .then(extraArgs("adventure")))
                 .then(Commands.literal("story")
                         .executes(ctx -> adventureList(ctx.getSource()))
-                        .then(extraArgs("adventure")))
-                .then(Commands.argument("unknown", StringArgumentType.greedyString())
+                        .then(extraArgs("adventure")))                .then(Commands.argument("unknown", StringArgumentType.greedyString())
                         .executes(ctx -> unknownInput(
                                 ctx.getSource(), StringArgumentType.getString(ctx, "unknown"))));
 
@@ -312,8 +309,7 @@ public final class EvaModCommands {
                 Component.literal(" — stuffed pet status & utilities")), false);
         source.sendSuccess(() -> line(
                 suggestCommand("/evamod adventure", "Adventure stories"),
-                Component.literal(" — multi-step cozy adventure stories")), false);
-        source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
+                Component.literal(" — multi-step cozy adventure stories")), false);        source.sendSuccess(() -> Component.literal("1.x jars are outdated. Saves migrate forward via schema versions.")
                 .withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
@@ -577,8 +573,7 @@ public final class EvaModCommands {
         data.markAllMailRead();
         player.setData(ModAttachments.PLAYER_DATA, data.copy());
         com.eva.evamod.adventure.AdventureService.signal(
-                player, com.eva.evamod.adventure.AdventureService.Signal.READ_MAIL);
-        return letters.size();
+                player, com.eva.evamod.adventure.AdventureService.Signal.READ_MAIL);        return letters.size();
     }
 
     private static int calendar(CommandSourceStack source) {
@@ -605,8 +600,7 @@ public final class EvaModCommands {
         if (player != null) {
             com.eva.evamod.adventure.AdventureService.signal(
                     player, com.eva.evamod.adventure.AdventureService.Signal.CHECK_CALENDAR);
-        }
-        return 1;
+        }        return 1;
     }
 
     private static int errand(CommandSourceStack source) {
@@ -759,7 +753,6 @@ public final class EvaModCommands {
         }
         return com.eva.evamod.adventure.AdventureService.start(player, id);
     }
-
     private static RequiredArgumentBuilder<CommandSourceStack, String> extraArgs(String canonical) {
         return Commands.argument("extra", StringArgumentType.greedyString())
                 .executes(ctx -> {

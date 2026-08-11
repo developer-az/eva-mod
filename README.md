@@ -13,7 +13,6 @@ errands, mail, multi-house towns — plus **stuffed-animal pets** and **multi-st
 - **8 living plush pets** — follow, sit, glow, find houses, carry a trinket (no combat)
 - **12 adventure stories** — unlock as you explore (`/evamod adventure`)
 - New jobs: Baker, Beekeeper, Storyteller, Archaeologist
-
 ## Already-explored worlds
 
 Chunks generated **before** Eva Mod never received `npc_house` / `npc_town` pieces.
@@ -25,6 +24,13 @@ Natural generation still works in **new** chunks. For a world that was already e
 
 Login never runs structure searches (MP-safe).
 
+## Future-proofing
+
+- Player + world attachments carry **schema versions** and migrate on login (`DataMigrations`).
+- Optional codec fields keep old saves loading.
+- `EvaContent` holds extension hooks for future errands / guide notes without breaking core.
+- Network protocol version lives in `ModVersions.NETWORK`.
+
 ## Features
 
 - Biome folk with personalities, jobs, gifts, trades, hearts, seasons, mail, journal
@@ -32,7 +38,6 @@ Login never runs structure searches (MP-safe).
 - Multi-step adventures tied to real gameplay (not combat)
 - Homestead Primer with clickable commands
 - Safe interior teleports; `/evamod town` / `locate` without cheats
-
 ## Commands
 
 | Command | Cheats? | What it does |
@@ -45,7 +50,6 @@ Login never runs structure searches (MP-safe).
 | `/evamod pet` | No | Pet status, sit, follow, glow, find, here |
 | `/evamod adventure` | No | List / start cozy adventure stories |
 | `/evamod version` | No | Version + schema |
-
 ## Building
 
 Requires Java 25.
@@ -55,7 +59,6 @@ Requires Java 25.
 ```
 
 Jar: `build/libs/evamod-3.0.0.jar`
-
 ## Running in dev
 
 ```

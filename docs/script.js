@@ -1,16 +1,20 @@
 (() => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const nav = document.getElementById("mini-nav");
+  const topbar = document.getElementById("topbar");
   const navLinks = [...document.querySelectorAll("[data-nav]")];
-  const sections = ["versions", "install"]
+  const sections = ["folk", "archive", "install"]
     .map((id) => document.getElementById(id))
     .filter(Boolean);
 
   const onScroll = () => {
-    if (nav) nav.classList.toggle("is-scrolled", (window.scrollY || 0) > 40);
+    if (!topbar) return;
+    // Switch to solid bar once the full-bleed hero scrolls away.
+    const threshold = Math.max(80, window.innerHeight * 0.55);
+    topbar.classList.toggle("is-scrolled", (window.scrollY || 0) > threshold);
   };
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (event) => {
@@ -29,10 +33,12 @@
         (entries) => {
           entries.forEach((entry) => {
             if (!entry.isIntersecting) return;
-            navLinks.forEach((a) => a.classList.toggle("is-active", a.dataset.nav === entry.target.id));
+            navLinks.forEach((a) =>
+              a.classList.toggle("is-active", a.dataset.nav === entry.target.id)
+            );
           });
         },
-        { rootMargin: "-35% 0px -50% 0px", threshold: 0.01 }
+        { rootMargin: "-30% 0px -55% 0px", threshold: 0.01 }
       );
       sections.forEach((section) => sectionObserver.observe(section));
     }
@@ -49,7 +55,7 @@
             revealObserver.unobserve(entry.target);
           });
         },
-        { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
+        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
       );
       reveals.forEach((el) => revealObserver.observe(el));
     }

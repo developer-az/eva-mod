@@ -13,15 +13,15 @@ package com.eva.evamod;
  * </ul>
  */
 public final class ModVersions {
-    public static final String DISPLAY = "3.0.0";
+    public static final String DISPLAY = "3.1.0";
     public static final String CODENAME = "Companions";
 
     /** Persisted player attachment schema. */
     public static final int PLAYER_SCHEMA = 3;
     /** Persisted overworld attachment schema. */
     public static final int WORLD_SCHEMA = 1;
-    /** Play networking protocol (PayloadRegistrar). */
-    public static final int NETWORK = 3;
+    /** Play networking protocol (PayloadRegistrar). OpenPetMenu + expanded dialogue actions. */
+    public static final int NETWORK = 4;
     /** First production line that is supported. 1.x jars are outdated. */
     public static final String MIN_SUPPORTED_DISPLAY = "2.0.0";
 

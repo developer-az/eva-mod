@@ -9,84 +9,104 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import net.minecraft.util.RandomSource;
 
+/**
+ * Gendered name pools per biome so presentation, voice of name, and skin agree.
+ */
 public final class NpcNames {
-    private static final Map<NpcVariant, String[]> NAMES = new EnumMap<>(NpcVariant.class);
+    private static final Map<NpcVariant, Map<NpcGender, String[]>> NAMES = new EnumMap<>(NpcVariant.class);
 
     static {
-        NAMES.put(NpcVariant.PLAINS, new String[]{
-                "Wilma", "Otto", "Greta", "Bram", "Elsie", "Tobin", "Marta", "Cedric", "Poppy", "Alden",
-                "Hilda", "Rolf", "Nette", "Pieter", "Clara", "Jonas", "Anke", "Felix", "Lotte", "Gerrit",
-                "Mina", "Hugo", "Saskia", "Emile", "Trudy", "Wessel", "Berta", "Nils", "Fleur", "Karel",
-                "Dora", "Simon", "Iris", "Pim", "Heidi", "Lars"});
-        NAMES.put(NpcVariant.DESERT, new String[]{
-                "Zahra", "Rashid", "Naila", "Tarek", "Samir", "Layla", "Farid", "Amina", "Khalid", "Yasmin",
-                "Omar", "Salma", "Hassan", "Dalia", "Karim", "Noor", "Idris", "Leila", "Yusuf", "Hana",
-                "Malik", "Rana", "Zain", "Soraya", "Bilal", "Amira", "Nabil", "Farah", "Jamal", "Safiya",
-                "Adil", "Lina", "Tariq", "Maya", "Rami", "Zara"});
-        NAMES.put(NpcVariant.TAIGA, new String[]{
-                "Björn", "Freya", "Sten", "Ingrid", "Leif", "Astrid", "Torvald", "Signe", "Rurik", "Helga",
-                "Sven", "Solveig", "Erik", "Liv", "Gunnar", "Kara", "Olaf", "Britta", "Ivar", "Ylva",
-                "Anders", "Tove", "Magnus", "Runa", "Harald", "Elin", "Birger", "Sigrid", "Ulf", "Hanne",
-                "Knut", "Ida", "Ragnar", "Maja", "Folke", "Vera"});
-        NAMES.put(NpcVariant.SNOWY, new String[]{
-                "Eira", "Kaspar", "Nuvia", "Oleg", "Tuula", "Miska", "Sedna", "Ivalu", "Anok", "Verna",
-                "Siku", "Aput", "Kirima", "Nuka", "Tala", "Soren", "Ilma", "Pekka", "Aila", "Torben",
-                "Yara", "Mikkel", "Sanna", "Lumi", "Kaia", "Rune", "Elsa", "Arktou", "Nivi", "Petra",
-                "Oslo", "Frey", "Halla", "Kai", "Umi", "Sila"});
-        NAMES.put(NpcVariant.SAVANNA, new String[]{
-                "Amara", "Kofi", "Zuri", "Jabari", "Nia", "Simba", "Ayana", "Tendai", "Imani", "Bakari",
-                "Asha", "Kwame", "Zola", "Tari", "Nala", "Jelani", "Sade", "Chidi", "Ayo", "Makena",
-                "Tema", "Dayo", "Kesi", "Obi", "Zainab", "Tau", "Lindiwe", "Eshe", "Binta", "Kamau",
-                "Folami", "Sefu", "Nuru", "Amani", "Zahara", "Jengo"});
-        NAMES.put(NpcVariant.JUNGLE, new String[]{
-                "Itzel", "Yuma", "Kanti", "Rio", "Maya", "Tono", "Xoco", "Balam", "Nima", "Coati",
-                "Lani", "Paco", "Suki", "Quetz", "Iara", "Tavi", "Momo", "Cielo", "Ruka", "Anahi",
-                "Tikal", "Luz", "Orin", "Nayeli", "Pax", "Saffron", "Koa", "Zena", "Mango", "Vira",
-                "Tulum", "Sena", "Ilan", "Ria", "Bodi", "Cala"});
-        NAMES.put(NpcVariant.SWAMP, new String[]{
-                "Mirtle", "Fenwick", "Boggs", "Willow", "Croaker", "Sable", "Moss", "Tadd", "Rana", "Murk",
-                "Reed", "Bruma", "Puddle", "Hazel", "Marsh", "Wisp", "Cinder", "Frogge", "Lichen", "Nettle",
-                "Dusk", "Briar", "Mire", "Thistle", "Pebble", "Glimmer", "Sedge", "Wren", "Toad", "Fern",
-                "Slate", "Pond", "Ivy", "Cricket", "Fog", "Bramble"});
-        NAMES.put(NpcVariant.OCEAN, new String[]{
-                "Marin", "Coral", "Tide", "Pearl", "Kai", "Nerida", "Brine", "Shelly", "Wave", "Anchor",
-                "Delta", "Siren", "Reef", "Salten", "Marina", "Cove", "Drift", "Kelp", "Harbor", "Foam",
-                "Nori", "Lumen", "Spray", "Captain", "Isla", "Bay", "Current", "Pike", "Oyster", "Finn",
-                "Aqua", "Merrow", "Salty", "Lagoon", "Wharf", "Nautilus"});
-        NAMES.put(NpcVariant.CHERRY, new String[]{
-                "Sakura", "Hanami", "Blossom", "Petal", "Momo", "Yuki", "Haru", "Aya", "Ren", "Kohana",
-                "Sora", "Hana", "Kiku", "Mei", "Tsubaki", "Akira", "Nori", "Sumi", "Kaito", "Rin",
-                "Pinkie", "Bloom", "Cherry", "Ume", "Asa", "Mio", "Kenji", "Fuji", "Saki", "Tomoe",
-                "Lila", "Orchid", "Plum", "Spring", "Petunia", "Kaori"});
-        NAMES.put(NpcVariant.BADLANDS, new String[]{
-                "Dusty", "Clay", "Rust", "Mesa", "Canyon", "Cinder", "Adobe", "Redrock", "Sage", "Butch",
-                "Tess", "Ridge", "Flint", "Sienna", "Outlaw", "Marl", "Terra", "Bluff", "Copper", "Dryden",
-                "Sundance", "Raven", "Ochre", "Spur", "Cordova", "Pueblo", "Arroyo", "Grit", "Vega", "Bronco",
-                "Sierra", "Quarry", "Tumble", "Ash", "Horizon", "Mesquite"});
-        NAMES.put(NpcVariant.MUSHROOM, new String[]{
-                "Mycel", "Shroom", "Morel", "Truffle", "Spore", "Cap", "Puff", "Gilly", "Mossy", "Fungus",
-                "Dotty", "Amanita", "Button", "Chanter", "Lumen", "Softcap", "Nibble", "Wisp", "Umber", "Porto",
-                "Glowcap", "Velvet", "Toadstool", "Inkcap", "Fairy", "Ringlet", "Dew", "Misty", "Boletus", "Piko",
-                "Saffron", "Enoki", "Shiitake", "Polka", "Nimbus", "Sprout"});
-        NAMES.put(NpcVariant.DARK, new String[]{
-                "Shade", "Umbra", "Thorn", "Nightshade", "Raven", "Hollow", "Ebony", "Grim", "Ashen", "Nocturne",
-                "Briar", "Vesper", "Crow", "Murkwood", "Silva", "Gloom", "Twilight", "Oakheart", "Rowan", "Sable",
-                "Dusk", "Wraith", "Ivy", "Morwen", "Blackbriar", "Lurk", "Canopy", "Fernshadow", "Nyx", "Hedgerow",
-                "Quiet", "Deepwood", "Mossbane", "Elder", "Root", "Whisper"});
-        NAMES.put(NpcVariant.MOUNTAIN, new String[]{
-                "Summit", "Cliff", "Granite", "Peak", "Alpine", "Stone", "Ridge", "Tor", "Echo", "Avalanche",
-                "Boulder", "Crag", "Pike", "Helena", "Flint", "Cascade", "Sherpa", "Yeti", "Frostpeak", "Slate",
-                "Kestrel", "Horn", "Mira", "Basalt", "Heather", "Windward", "Talus", "Ivo", "Sierra", "Quarry",
-                "Hawk", "Glacier", "Berg", "Astra", "Cairn", "Skyline"});
+        put(NpcVariant.PLAINS,
+                new String[]{"Wilma", "Greta", "Elsie", "Marta", "Poppy", "Hilda", "Nette", "Clara", "Anke", "Lotte",
+                        "Mina", "Saskia", "Trudy", "Berta", "Fleur", "Dora", "Iris", "Heidi"},
+                new String[]{"Otto", "Bram", "Tobin", "Cedric", "Alden", "Rolf", "Pieter", "Jonas", "Felix", "Gerrit",
+                        "Hugo", "Emile", "Wessel", "Nils", "Karel", "Simon", "Pim", "Lars"});
+        put(NpcVariant.DESERT,
+                new String[]{"Zahra", "Naila", "Layla", "Amina", "Yasmin", "Salma", "Dalia", "Noor", "Leila", "Hana",
+                        "Rana", "Soraya", "Amira", "Farah", "Safiya", "Lina", "Maya", "Zara"},
+                new String[]{"Rashid", "Tarek", "Samir", "Farid", "Khalid", "Omar", "Hassan", "Karim", "Idris", "Yusuf",
+                        "Malik", "Zain", "Bilal", "Nabil", "Jamal", "Adil", "Tariq", "Rami"});
+        put(NpcVariant.TAIGA,
+                new String[]{"Freya", "Ingrid", "Astrid", "Signe", "Helga", "Solveig", "Liv", "Kara", "Britta", "Ylva",
+                        "Tove", "Runa", "Elin", "Sigrid", "Hanne", "Ida", "Maja", "Vera"},
+                new String[]{"Björn", "Sten", "Leif", "Torvald", "Rurik", "Sven", "Erik", "Gunnar", "Olaf", "Ivar",
+                        "Anders", "Magnus", "Harald", "Birger", "Ulf", "Knut", "Ragnar", "Folke"});
+        put(NpcVariant.SNOWY,
+                new String[]{"Eira", "Nuvia", "Tuula", "Sedna", "Ivalu", "Verna", "Kirima", "Tala", "Ilma", "Aila",
+                        "Yara", "Sanna", "Lumi", "Kaia", "Elsa", "Nivi", "Petra", "Halla", "Sila", "Umi"},
+                new String[]{"Kaspar", "Oleg", "Miska", "Anok", "Siku", "Aput", "Nuka", "Soren", "Pekka", "Torben",
+                        "Mikkel", "Rune", "Arktou", "Oslo", "Frey", "Kai"});
+        put(NpcVariant.SAVANNA,
+                new String[]{"Amara", "Zuri", "Nia", "Ayana", "Imani", "Asha", "Zola", "Nala", "Sade", "Makena",
+                        "Tema", "Kesi", "Zainab", "Lindiwe", "Eshe", "Binta", "Folami", "Nuru", "Amani", "Zahara"},
+                new String[]{"Kofi", "Jabari", "Simba", "Tendai", "Bakari", "Kwame", "Tari", "Jelani", "Chidi", "Ayo",
+                        "Dayo", "Obi", "Tau", "Kamau", "Sefu", "Jengo"});
+        put(NpcVariant.JUNGLE,
+                new String[]{"Itzel", "Kanti", "Maya", "Xoco", "Nima", "Lani", "Suki", "Iara", "Anahi", "Luz",
+                        "Nayeli", "Saffron", "Zena", "Vira", "Sena", "Ria", "Cala"},
+                new String[]{"Yuma", "Rio", "Tono", "Balam", "Coati", "Paco", "Quetz", "Tavi", "Momo", "Cielo",
+                        "Ruka", "Tikal", "Orin", "Pax", "Koa", "Mango", "Tulum", "Ilan", "Bodi"});
+        put(NpcVariant.SWAMP,
+                new String[]{"Mirtle", "Willow", "Sable", "Rana", "Bruma", "Hazel", "Wisp", "Nettle", "Briar",
+                        "Thistle", "Glimmer", "Wren", "Fern", "Ivy", "Fog"},
+                new String[]{"Fenwick", "Boggs", "Croaker", "Moss", "Tadd", "Murk", "Reed", "Puddle", "Marsh", "Cinder",
+                        "Frogge", "Lichen", "Dusk", "Mire", "Pebble", "Sedge", "Toad", "Slate", "Pond", "Cricket",
+                        "Bramble"});
+        put(NpcVariant.OCEAN,
+                new String[]{"Coral", "Pearl", "Nerida", "Shelly", "Siren", "Marina", "Foam", "Isla", "Aqua",
+                        "Lagoon", "Nori"},
+                new String[]{"Marin", "Tide", "Kai", "Brine", "Wave", "Anchor", "Delta", "Reef", "Salten", "Cove",
+                        "Drift", "Kelp", "Harbor", "Lumen", "Spray", "Captain", "Bay", "Current", "Pike", "Oyster",
+                        "Finn", "Merrow", "Salty", "Wharf", "Nautilus"});
+        put(NpcVariant.CHERRY,
+                new String[]{"Sakura", "Hanami", "Blossom", "Petal", "Momo", "Yuki", "Aya", "Kohana", "Hana", "Kiku",
+                        "Mei", "Tsubaki", "Sumi", "Rin", "Pinkie", "Bloom", "Cherry", "Ume", "Mio", "Saki", "Tomoe",
+                        "Lila", "Orchid", "Petunia", "Kaori"},
+                new String[]{"Haru", "Ren", "Sora", "Akira", "Nori", "Kaito", "Kenji", "Fuji", "Plum", "Spring", "Asa"});
+        put(NpcVariant.BADLANDS,
+                new String[]{"Tess", "Sienna", "Terra", "Raven", "Vega", "Sierra", "Ash"},
+                new String[]{"Dusty", "Clay", "Rust", "Mesa", "Canyon", "Cinder", "Adobe", "Redrock", "Sage", "Butch",
+                        "Ridge", "Flint", "Outlaw", "Marl", "Bluff", "Copper", "Dryden", "Sundance", "Ochre", "Spur",
+                        "Cordova", "Pueblo", "Arroyo", "Grit", "Bronco", "Quarry", "Tumble", "Horizon", "Mesquite"});
+        put(NpcVariant.MUSHROOM,
+                new String[]{"Dotty", "Amanita", "Fairy", "Ringlet", "Dew", "Misty", "Polka", "Nimbus", "Sprout",
+                        "Velvet"},
+                new String[]{"Mycel", "Shroom", "Morel", "Truffle", "Spore", "Cap", "Puff", "Gilly", "Mossy", "Fungus",
+                        "Button", "Chanter", "Lumen", "Softcap", "Nibble", "Wisp", "Umber", "Porto", "Glowcap",
+                        "Toadstool", "Inkcap", "Boletus", "Piko", "Saffron", "Enoki", "Shiitake"});
+        put(NpcVariant.DARK,
+                new String[]{"Nightshade", "Silva", "Ivy", "Morwen", "Nyx", "Quiet", "Fernshadow"},
+                new String[]{"Shade", "Umbra", "Thorn", "Raven", "Hollow", "Ebony", "Grim", "Ashen", "Nocturne",
+                        "Briar", "Vesper", "Crow", "Murkwood", "Gloom", "Twilight", "Oakheart", "Rowan", "Sable",
+                        "Dusk", "Wraith", "Blackbriar", "Lurk", "Canopy", "Hedgerow", "Deepwood", "Mossbane", "Elder",
+                        "Root", "Whisper"});
+        put(NpcVariant.MOUNTAIN,
+                new String[]{"Helena", "Mira", "Heather", "Sierra", "Astra", "Cascade"},
+                new String[]{"Summit", "Cliff", "Granite", "Peak", "Alpine", "Stone", "Ridge", "Tor", "Echo",
+                        "Avalanche", "Boulder", "Crag", "Pike", "Flint", "Sherpa", "Yeti", "Frostpeak", "Slate",
+                        "Kestrel", "Horn", "Basalt", "Windward", "Talus", "Ivo", "Quarry", "Hawk", "Glacier", "Berg",
+                        "Cairn", "Skyline"});
     }
 
-    public static String pick(NpcVariant variant, RandomSource random) {
-        String[] pool = NAMES.get(variant);
+    private static void put(NpcVariant variant, String[] feminine, String[] masculine) {
+        Map<NpcGender, String[]> byGender = new EnumMap<>(NpcGender.class);
+        byGender.put(NpcGender.FEMALE, feminine);
+        byGender.put(NpcGender.MALE, masculine);
+        NAMES.put(variant, byGender);
+    }
+
+    public static String pick(NpcVariant variant, NpcGender gender, RandomSource random) {
+        String[] pool = pool(variant, gender);
         return pool[random.nextInt(pool.length)];
     }
 
-    public static @Nullable String pickUnused(NpcVariant variant, RandomSource random, Set<String> usedNormalized) {
-        String[] pool = NAMES.get(variant);
+    public static String pick(NpcVariant variant, RandomSource random) {
+        return pick(variant, NpcGender.random(random), random);
+    }
+
+    public static @Nullable String pickUnused(NpcVariant variant, NpcGender gender, RandomSource random,
+                                              Set<String> usedNormalized) {
+        String[] pool = pool(variant, gender);
         List<String> free = new ArrayList<>();
         for (String name : pool) {
             if (!usedNormalized.contains(name.toLowerCase(Locale.ROOT))) {
@@ -99,10 +119,14 @@ public final class NpcNames {
         return free.get(random.nextInt(free.size()));
     }
 
-    public static @Nullable String pickUnusedAny(RandomSource random, Set<String> usedNormalized) {
+    public static @Nullable String pickUnused(NpcVariant variant, RandomSource random, Set<String> usedNormalized) {
+        return pickUnused(variant, NpcGender.random(random), random, usedNormalized);
+    }
+
+    public static @Nullable String pickUnusedAny(NpcGender gender, RandomSource random, Set<String> usedNormalized) {
         List<String> free = new ArrayList<>();
-        for (String[] pool : NAMES.values()) {
-            for (String name : pool) {
+        for (Map<NpcGender, String[]> byGender : NAMES.values()) {
+            for (String name : byGender.get(gender)) {
                 if (!usedNormalized.contains(name.toLowerCase(Locale.ROOT))) {
                     free.add(name);
                 }
@@ -112,6 +136,14 @@ public final class NpcNames {
             return null;
         }
         return free.get(random.nextInt(free.size()));
+    }
+
+    public static @Nullable String pickUnusedAny(RandomSource random, Set<String> usedNormalized) {
+        return pickUnusedAny(NpcGender.random(random), random, usedNormalized);
+    }
+
+    private static String[] pool(NpcVariant variant, NpcGender gender) {
+        return NAMES.get(variant).get(gender);
     }
 
     private NpcNames() {

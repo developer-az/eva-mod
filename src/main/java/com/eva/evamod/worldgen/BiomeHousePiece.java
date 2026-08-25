@@ -250,15 +250,11 @@ public class BiomeHousePiece extends StructurePiece {
             default -> buildSteppedRoof(level, box, ox, oz, width, depth, floorY, wallHeight, palette);
         }
 
-        // Interior furnishings
+        // Interior furnishings — place bed only when BOTH parts are inside this chunk box
+        // (half-beds on chunk borders break into items on neighbor update).
         int interiorBackZ = oz + depth - 2;
         int interiorFrontZ = oz + frontWall + 1;
-        BlockState bedFoot = palette.bed().defaultBlockState()
-                .setValue(BedBlock.PART, BedPart.FOOT).setValue(BedBlock.FACING, Direction.EAST);
-        BlockState bedHead = palette.bed().defaultBlockState()
-                .setValue(BedBlock.PART, BedPart.HEAD).setValue(BedBlock.FACING, Direction.EAST);
-        this.placeBlock(level, bedFoot, ox + 1, floorY + 1, interiorBackZ, box);
-        this.placeBlock(level, bedHead, ox + 2, floorY + 1, interiorBackZ, box);
+        placeBedPair(level, box, palette, ox + 1, floorY + 1, interiorBackZ);
 
         this.placeBlock(level, job.getJobBlock().defaultBlockState(), ox + width - 2, floorY + 1, interiorFrontZ, box);
         this.placeBlock(level, Blocks.LANTERN.defaultBlockState(), ox + 1, floorY + 1, interiorFrontZ, box);
@@ -276,9 +272,8 @@ public class BiomeHousePiece extends StructurePiece {
             }
             this.placeBlock(level, carpet, doorX, floorY + 1, z, box);
         }
-        // Don't cover the bed
-        this.placeBlock(level, bedFoot, ox + 1, floorY + 1, interiorBackZ, box);
-        this.placeBlock(level, bedHead, ox + 2, floorY + 1, interiorBackZ, box);
+        // Re-place bed after carpet pass (still only if both halves fit).
+        placeBedPair(level, box, palette, ox + 1, floorY + 1, interiorBackZ);
         // Re-clear doorway corridor after furniture passes (2 blocks high, in front + threshold + first step).
         clearDoorCorridor(level, box, doorX, floorY, doorZ);
         this.placeBlock(level, doorLower, doorX, floorY + 1, doorZ, box);
@@ -495,5 +490,24 @@ public class BiomeHousePiece extends StructurePiece {
         npc.setVariant(NpcVariant.byId(variantId));
         npc.setJob(job);
         level.addFreshEntityWithPassengers(npc);
+    }
+
+    /**
+     * Places foot+head together only when both world positions are inside {@code box}.
+     * Partial placement across chunk borders is the classic "bed pops into items" bug.
+     */
+    private void placeBedPair(WorldGenLevel level, BoundingBox box, HousePalette palette,
+                              int footX, int y, int z) {
+        BlockPos footPos = new BlockPos(this.getWorldX(footX, z), this.getWorldY(y), this.getWorldZ(footX, z));
+        BlockPos headPos = new BlockPos(this.getWorldX(footX + 1, z), this.getWorldY(y), this.getWorldZ(footX + 1, z));
+        if (!box.isInside(footPos) || !box.isInside(headPos)) {
+            return;
+        }
+        BlockState bedFoot = palette.bed().defaultBlockState()
+                .setValue(BedBlock.PART, BedPart.FOOT).setValue(BedBlock.FACING, Direction.EAST);
+        BlockState bedHead = palette.bed().defaultBlockState()
+                .setValue(BedBlock.PART, BedPart.HEAD).setValue(BedBlock.FACING, Direction.EAST);
+        this.placeBlock(level, bedFoot, footX, y, z, box);
+        this.placeBlock(level, bedHead, footX + 1, y, z, box);
     }
 }

@@ -53,7 +53,7 @@ public class PetRenderer extends HumanoidMobRenderer<StuffedPet, PetRenderState,
 
     @Override
     protected void scale(PetRenderState state, PoseStack poseStack) {
-        float s = 0.55F;
+        float s = state.kind != null ? state.kind.getRenderScale() : 0.55F;
         poseStack.scale(s, s, s);
         if (state.sitting) {
             poseStack.translate(0.0F, 0.15F, 0.0F);

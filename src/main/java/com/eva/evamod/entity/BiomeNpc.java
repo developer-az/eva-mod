@@ -2,6 +2,7 @@ package com.eva.evamod.entity;
 
 import com.eva.evamod.calendar.SeasonCalendar;
 import com.eva.evamod.dialogue.DialogueManager;
+import com.eva.evamod.entity.ai.DefendHomeGoal;
 import com.eva.evamod.entity.ai.ReturnHomeGoal;
 import com.eva.evamod.entity.ai.SleepGoal;
 import com.eva.evamod.entity.ai.SocializeGoal;
@@ -75,6 +76,8 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             SynchedEntityData.defineId(BiomeNpc.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_JOB =
             SynchedEntityData.defineId(BiomeNpc.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_GENDER =
+            SynchedEntityData.defineId(BiomeNpc.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> DATA_BUBBLE =
             SynchedEntityData.defineId(BiomeNpc.class, EntityDataSerializers.STRING);
 
@@ -122,6 +125,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         super.defineSynchedData(builder);
         builder.define(DATA_VARIANT, 0);
         builder.define(DATA_JOB, 0);
+        builder.define(DATA_GENDER, 0);
         builder.define(DATA_BUBBLE, "");
     }
 
@@ -129,15 +133,16 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new TradingFreezeGoal(this));
-        this.goalSelector.addGoal(2, new PanicGoal(this, 1.3));
-        this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(4, new SleepGoal(this, 0.9));
-        this.goalSelector.addGoal(5, new ReturnHomeGoal(this, 1.0));
-        this.goalSelector.addGoal(6, new SocializeGoal(this, 0.7));
-        this.goalSelector.addGoal(7, new WorkGoal(this, 0.7));
-        this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.6));
-        this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(2, new DefendHomeGoal(this, 1.05));
+        this.goalSelector.addGoal(3, new PanicGoal(this, 1.3));
+        this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(5, new SleepGoal(this, 0.9));
+        this.goalSelector.addGoal(6, new ReturnHomeGoal(this, 1.0));
+        this.goalSelector.addGoal(7, new SocializeGoal(this, 0.7));
+        this.goalSelector.addGoal(8, new WorkGoal(this, 0.7));
+        this.goalSelector.addGoal(9, new WaterAvoidingRandomStrollGoal(this, 0.6));
+        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(11, new RandomLookAroundGoal(this));
     }
 
     public NpcVariant getVariant() {
@@ -156,6 +161,14 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         this.entityData.set(DATA_JOB, job.ordinal());
         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(job.getWorkItem()));
         this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+    }
+
+    public NpcGender getGender() {
+        return NpcGender.byId(this.entityData.get(DATA_GENDER));
+    }
+
+    public void setGender(NpcGender gender) {
+        this.entityData.set(DATA_GENDER, gender.ordinal());
     }
 
     public NpcPersonality getPersonality() {
@@ -293,7 +306,9 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         this.setVariant(variant);
         this.setJob(variant.randomJob(this.random));
         this.personality = NpcPersonality.random(this.random);
-        this.setCustomName(Component.literal(UsedNpcNamesData.claim(level, variant, this.random)));
+        NpcGender gender = NpcGender.random(this.random);
+        this.setGender(gender);
+        this.setCustomName(Component.literal(UsedNpcNamesData.claim(level, variant, gender, this.random)));
         this.setCustomNameVisible(true);
         if (!this.hasHome()) {
             this.setHomePos(this.blockPosition());
@@ -409,7 +424,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         if (player instanceof ServerPlayer serverPlayer) {
             this.clearRestPose();
             if (this.isSleeping()) {
-                this.stopSleeping();
+                this.stopSleepingInBed();
                 this.openDialogue(serverPlayer, DialogueManager.Context.WOKEN);
             } else if (player.isShiftKeyDown() && !player.getItemInHand(hand).isEmpty()) {
                 this.receiveGift(serverPlayer, player.getItemInHand(hand));
@@ -447,7 +462,11 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
                 || context == DialogueManager.Context.HEART_EVENT
                 || context == DialogueManager.Context.BIRTHDAY
                 || context == DialogueManager.Context.FESTIVAL
-                || context == DialogueManager.Context.ADVENTURE_TIP) {
+                || context == DialogueManager.Context.ADVENTURE_TIP
+                || context == DialogueManager.Context.ASK_DAY
+                || context == DialogueManager.Context.COMPLIMENT
+                || context == DialogueManager.Context.HOME_TOUR
+                || context == DialogueManager.Context.STORY) {
             memory.recordTalk(player.getUUID(), day);
         }
         this.clearRestPose();
@@ -536,6 +555,44 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         }
         this.openDialogue(player, reaction);
         com.eva.evamod.adventure.AdventureService.signal(player, com.eva.evamod.adventure.AdventureService.Signal.GIFT_NPC);
+    }
+
+    /** Scalable dialogue verbs beyond Talk/Trade/Help — Stardew/Terraria-style loop. */
+    public void handleDialogueAction(ServerPlayer player, int action) {
+        switch (action) {
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_TALK ->
+                    openDialogue(player, DialogueManager.Context.SMALL_TALK);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_TRADE -> startTrading(player);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_ERRAND -> handleErrand(player);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_TIP ->
+                    openDialogue(player, DialogueManager.Context.ADVENTURE_TIP);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_ASK_DAY ->
+                    openDialogue(player, DialogueManager.Context.ASK_DAY);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_COMPLIMENT -> handleCompliment(player);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_TOUR ->
+                    openDialogue(player, DialogueManager.Context.HOME_TOUR);
+            case com.eva.evamod.net.DialogueActionPayload.ACTION_STORY ->
+                    openDialogue(player, DialogueManager.Context.STORY);
+            default -> openDialogue(player, DialogueManager.Context.SMALL_TALK);
+        }
+    }
+
+    private void handleCompliment(ServerPlayer player) {
+        long day = currentDay();
+        NpcMemory.Record record = memory.get(player.getUUID(), day);
+        if (record.lastComplimentDay == day) {
+            openDialogue(player, DialogueManager.Context.COMPLIMENT_AGAIN);
+            return;
+        }
+        record.lastComplimentDay = day;
+        memory.recordTalk(player.getUUID(), day);
+        memory.recordGift(player.getUUID(), day, false, 2);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.HEART,
+                    this.getX(), this.getEyeY() + 0.4, this.getZ(), 3, 0.25, 0.25, 0.25, 0.0);
+        }
+        this.playSound(SoundEvents.VILLAGER_CELEBRATE, 0.7F, 1.15F);
+        openDialogue(player, DialogueManager.Context.COMPLIMENT);
     }
 
     /** Offer, check, or complete an errand from the dialogue Help button. */
@@ -755,6 +812,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         super.addAdditionalSaveData(output);
         output.putInt("Variant", this.getVariant().ordinal());
         output.putInt("Job", this.getJob().ordinal());
+        output.putInt("Gender", this.getGender().ordinal());
         output.putInt("Personality", personality.ordinal());
         output.putInt("HomeX", homePos.getX());
         output.putInt("HomeY", homePos.getY());
@@ -767,6 +825,7 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
         super.readAdditionalSaveData(input);
         this.setVariant(NpcVariant.byId(input.getIntOr("Variant", 0)));
         this.entityData.set(DATA_JOB, Math.floorMod(input.getIntOr("Job", 0), NpcJob.values().length));
+        this.setGender(NpcGender.byId(input.getIntOr("Gender", 0)));
         this.personality = NpcPersonality.byId(input.getIntOr("Personality", 0));
         BlockPos home = new BlockPos(
                 input.getIntOr("HomeX", 0),
@@ -776,5 +835,39 @@ public class BiomeNpc extends PathfinderMob implements Merchant {
             this.setHomePos(home);
         }
         memory.load(input.childOrEmpty("NpcMemory"));
+    }
+
+    /** Start sleeping only on a real bed head; sets OCCUPIED so beds stay valid. */
+    public void startSleepingInBed(BlockPos bedHead) {
+        BlockState state = this.level().getBlockState(bedHead);
+        if (!(state.getBlock() instanceof net.minecraft.world.level.block.BedBlock)
+                || !state.hasProperty(net.minecraft.world.level.block.BedBlock.PART)
+                || state.getValue(net.minecraft.world.level.block.BedBlock.PART)
+                != net.minecraft.world.level.block.state.properties.BedPart.HEAD) {
+            return;
+        }
+        this.startSleeping(bedHead);
+        if (!this.level().isClientSide()
+                && state.hasProperty(net.minecraft.world.level.block.BedBlock.OCCUPIED)
+                && !state.getValue(net.minecraft.world.level.block.BedBlock.OCCUPIED)) {
+            this.level().setBlock(bedHead,
+                    state.setValue(net.minecraft.world.level.block.BedBlock.OCCUPIED, true), 3);
+        }
+    }
+
+    public void stopSleepingInBed() {
+        java.util.Optional<BlockPos> sleepPos = this.getSleepingPos();
+        if (!this.level().isClientSide() && sleepPos.isPresent()) {
+            BlockState state = this.level().getBlockState(sleepPos.get());
+            if (state.getBlock() instanceof net.minecraft.world.level.block.BedBlock
+                    && state.hasProperty(net.minecraft.world.level.block.BedBlock.OCCUPIED)
+                    && state.getValue(net.minecraft.world.level.block.BedBlock.OCCUPIED)) {
+                this.level().setBlock(sleepPos.get(),
+                        state.setValue(net.minecraft.world.level.block.BedBlock.OCCUPIED, false), 3);
+            }
+        }
+        if (this.isSleeping()) {
+            this.stopSleeping();
+        }
     }
 }

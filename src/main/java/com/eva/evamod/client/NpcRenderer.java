@@ -2,6 +2,7 @@ package com.eva.evamod.client;
 
 import com.eva.evamod.EvaMod;
 import com.eva.evamod.entity.BiomeNpc;
+import com.eva.evamod.entity.NpcGender;
 import com.eva.evamod.entity.NpcVariant;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.EnumMap;
@@ -18,14 +19,19 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 public class NpcRenderer extends HumanoidMobRenderer<BiomeNpc, NpcRenderState, HumanoidModel<NpcRenderState>> {
-    private static final Map<NpcVariant, Identifier> TEXTURES = new EnumMap<>(NpcVariant.class);
+    private static final Map<NpcVariant, Map<NpcGender, Identifier>> TEXTURES = new EnumMap<>(NpcVariant.class);
     /** Extra lift so the bubble sits above the normal nametag, not replacing it. */
     private static final float BUBBLE_LIFT = 0.35F;
 
     static {
         for (NpcVariant variant : NpcVariant.values()) {
-            TEXTURES.put(variant, Identifier.fromNamespaceAndPath(EvaMod.MODID,
-                    "textures/entity/npc_" + variant.name().toLowerCase(Locale.ROOT) + ".png"));
+            Map<NpcGender, Identifier> byGender = new EnumMap<>(NpcGender.class);
+            String base = variant.name().toLowerCase(Locale.ROOT);
+            for (NpcGender gender : NpcGender.values()) {
+                byGender.put(gender, Identifier.fromNamespaceAndPath(EvaMod.MODID,
+                        "textures/entity/npc_" + base + "_" + gender.getTextureSuffix() + ".png"));
+            }
+            TEXTURES.put(variant, byGender);
         }
     }
 
@@ -42,12 +48,17 @@ public class NpcRenderer extends HumanoidMobRenderer<BiomeNpc, NpcRenderState, H
     public void extractRenderState(BiomeNpc entity, NpcRenderState state, float partialTicks) {
         super.extractRenderState(entity, state, partialTicks);
         state.variant = entity.getVariant();
+        state.gender = entity.getGender();
         state.bubbleText = entity.getBubbleText();
     }
 
     @Override
     public Identifier getTextureLocation(NpcRenderState state) {
-        return TEXTURES.get(state.variant);
+        Map<NpcGender, Identifier> byGender = TEXTURES.get(state.variant);
+        if (byGender == null) {
+            return TEXTURES.get(NpcVariant.PLAINS).get(NpcGender.FEMALE);
+        }
+        return byGender.getOrDefault(state.gender, byGender.get(NpcGender.FEMALE));
     }
 
     @Override

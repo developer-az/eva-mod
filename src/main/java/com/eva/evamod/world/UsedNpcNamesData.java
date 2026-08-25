@@ -45,14 +45,19 @@ public class UsedNpcNamesData {
     }
 
     public static String claim(LevelAccessor level, NpcVariant variant, RandomSource random) {
+        return claim(level, variant, com.eva.evamod.entity.NpcGender.random(random), random);
+    }
+
+    public static String claim(LevelAccessor level, NpcVariant variant,
+                               com.eva.evamod.entity.NpcGender gender, RandomSource random) {
         ServerLevel serverLevel = resolveServerLevel(level);
         if (serverLevel == null) {
-            return NpcNames.pick(variant, random);
+            return NpcNames.pick(variant, gender, random);
         }
         // Worldgen may claim names from multiple worker threads.
         synchronized (serverLevel) {
             UsedNpcNamesData data = serverLevel.getData(ModAttachments.USED_NPC_NAMES);
-            String name = data.claimUnique(variant, random);
+            String name = data.claimUnique(variant, gender, random);
             serverLevel.setData(ModAttachments.USED_NPC_NAMES, data.copy());
             return name;
         }
@@ -69,17 +74,21 @@ public class UsedNpcNamesData {
     }
 
     public String claimUnique(NpcVariant variant, RandomSource random) {
-        String picked = NpcNames.pickUnused(variant, random, used);
+        return claimUnique(variant, com.eva.evamod.entity.NpcGender.random(random), random);
+    }
+
+    public String claimUnique(NpcVariant variant, com.eva.evamod.entity.NpcGender gender, RandomSource random) {
+        String picked = NpcNames.pickUnused(variant, gender, random, used);
         if (picked != null) {
             used.add(normalize(picked));
             return picked;
         }
-        picked = NpcNames.pickUnusedAny(random, used);
+        picked = NpcNames.pickUnusedAny(gender, random, used);
         if (picked != null) {
             used.add(normalize(picked));
             return picked;
         }
-        String base = NpcNames.pick(variant, random);
+        String base = NpcNames.pick(variant, gender, random);
         for (String suffix : ROMAN) {
             String candidate = base + " " + suffix;
             if (used.add(normalize(candidate))) {

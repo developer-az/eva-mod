@@ -40,7 +40,12 @@ public final class DialogueManager {
         ERRAND_COMPLETE,
         FESTIVAL,
         BIRTHDAY,
-        ADVENTURE_TIP
+        ADVENTURE_TIP,
+        ASK_DAY,
+        COMPLIMENT,
+        COMPLIMENT_AGAIN,
+        HOME_TOUR,
+        STORY
     }
 
     private static final String[] FIRST_MEETING = {
@@ -211,6 +216,44 @@ public final class DialogueManager {
             "Festival days make everyone chatty. Check /evamod calendar so you don't miss one.",
             "Birthdays are written in the stars — check your journal. Gifts that day hit different.",
             "Curious folk leave rumors. Follow a few and the world opens up."
+    };
+
+    private static final String[] ASK_DAY_LINES = {
+            "%SEASON% %DAY%. I measured the morning by how warm the kettle felt.",
+            "Today? Busy in a gentle way. The %BIOME% is humming.",
+            "Ask me again at dusk — mornings and evenings are different people.",
+            "I woke up thinking about %FAVORITE%. That usually means a good day.",
+            "The sky looks like chapter three of a long story. That's my weather report."
+    };
+
+    private static final String[] COMPLIMENT_LINES = {
+            "Oh! You — stop. No, don't stop. That was lovely, %PLAYER%.",
+            "Compliments? In THIS economy? I'll take it.",
+            "You're going to make me rearrange my whole afternoon around smiling.",
+            "Keep talking like that and I'll start charging rent for standing here.",
+            "Thank you. I tucked that kind word next to my favorite button."
+    };
+
+    private static final String[] COMPLIMENT_AGAIN_LINES = {
+            "One compliment a day keeps the ego manageable. Tomorrow, promise.",
+            "You're sweet, but my blush quota is full until dawn.",
+            "Save some praise for the bees. They work harder than I do."
+    };
+
+    private static final String[] HOME_TOUR_LINES = {
+            "Welcome to my %BIOME% home! Bed in back, kettle up front, pride everywhere.",
+            "Tour time: door (obviously), work corner for a %JOB%, and a bed that knows my name.",
+            "Mind the carpet runner — it's decorative AND a pathfinding suggestion.",
+            "I planted the flowers myself. Mostly. The wind helped. Rude wind.",
+            "If you ever need a roof in a storm, this one has held through worse moods than mine."
+    };
+
+    private static final String[] STORY_LINES = {
+            "Once, a traveler left a map with no labels. I still chase those empty circles.",
+            "There's a rumor of a town plaza that throws festivals just by existing. I've seen it — almost.",
+            "My favorite story ends with soup. All the best ones do.",
+            "I met a stuffed animal that glowed like a lantern. Don't tell it I said 'stuffed.'",
+            "If you keep helping neighbors, the world starts helping you back. Quietly. Happily."
     };
 
     private static final Map<Integer, String[]> HEART_EVENTS = Map.of(
@@ -465,6 +508,11 @@ public final class DialogueManager {
             case FESTIVAL -> pick(FESTIVAL_LINES, random);
             case BIRTHDAY -> pick(BIRTHDAY_GREET, random);
             case ADVENTURE_TIP -> pick(ADVENTURE_TIPS, random);
+            case ASK_DAY -> pick(ASK_DAY_LINES, random);
+            case COMPLIMENT -> pick(COMPLIMENT_LINES, random);
+            case COMPLIMENT_AGAIN -> pick(COMPLIMENT_AGAIN_LINES, random);
+            case HOME_TOUR -> pick(HOME_TOUR_LINES, random);
+            case STORY -> pick(STORY_LINES, random);
         };
         return substitute(line, npc, playerName, record, day, activeErrand);
     }

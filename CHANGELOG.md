@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.1.0 — Companions identity & home warmth
+
+### Visual identity
+- NPC skins are now **variant × gender** (hair/tunic silhouettes + biome accessories), not one shared look
+- Gendered name pools match presentation
+- Pets get distinct plush silhouettes, scales, and soft per-kind sounds
+
+### Pets do things
+- Right-click opens a **pet menu** (sit/follow, glow, find town, cheer, trinket tip) mirroring NPC dialogue UX
+
+### Protective neighbors
+- NPCs **fend off hostiles near home** with knockback, a light tap, and brief Weakness (cozy, not OP)
+
+### Deeper dialogue
+- Ask Day, Compliment, Tour, Story actions added alongside Talk / Trade / Help
+
+### Bed fix
+- Beds only place when both halves fit the chunk box (stops half-bed item pops)
+- Sleep AI never treats home as a bed; properly sets/clears OCCUPIED
+
+### Production
+- Display **3.1.0**, network **4** (pet menu payloads). Entity gender NBT is additive for old saves.
+
 ## 3.0.0 — Companions
 
 ### Skins & folk

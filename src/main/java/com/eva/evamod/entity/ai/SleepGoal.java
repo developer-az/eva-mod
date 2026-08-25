@@ -14,6 +14,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * At night (or when raining outdoors), head for the home bed and go to sleep.
  * Sleepy personalities also take short afternoon naps.
+ * <p>
+ * Never treats {@code home} as a bed — sleeping on a non-bed was a root cause of
+ * broken/despawned beds when OCCUPIED updates and invalid sleep poses interacted badly.
  */
 public class SleepGoal extends Goal {
     private static final int NAP_LENGTH = 200;
@@ -65,12 +68,16 @@ public class SleepGoal extends Goal {
             return false;
         }
         if (npc.isSleeping()) {
+            if (bedPos != null && !isBedHead(bedPos)) {
+                return false;
+            }
             if (nap) {
                 return napTicksLeft > 0;
             }
             return npc.level().isDarkOutside() || npc.level().isRaining();
         }
-        return bedPos != null && (nap || npc.level().isDarkOutside() || npc.level().isRaining());
+        return bedPos != null && isBedHead(bedPos)
+                && (nap || npc.level().isDarkOutside() || npc.level().isRaining());
     }
 
     @Override
@@ -85,9 +92,7 @@ public class SleepGoal extends Goal {
 
     @Override
     public void stop() {
-        if (npc.isSleeping()) {
-            npc.stopSleeping();
-        }
+        npc.stopSleepingInBed();
         this.bedPos = null;
         this.nap = false;
         npc.getNavigation().stop();
@@ -98,6 +103,14 @@ public class SleepGoal extends Goal {
     public void tick() {
         if (bedPos == null) {
             return;
+        }
+        if (!isBedHead(bedPos)) {
+            npc.setCachedBedPos(null);
+            bedPos = resolveBed();
+            if (bedPos == null) {
+                npc.stopSleepingInBed();
+                return;
+            }
         }
         if (npc.isSleeping()) {
             if (nap) {
@@ -121,7 +134,7 @@ public class SleepGoal extends Goal {
             npc.getNavigation().stop();
             npc.tryRestPoseNear(bedPos);
             if (settleTicks > 20) {
-                npc.startSleeping(bedPos);
+                npc.startSleepingInBed(bedPos);
             }
         }
     }
@@ -132,9 +145,12 @@ public class SleepGoal extends Goal {
         if (cached != null && isBedHead(cached)) {
             return cached;
         }
+        if (cached != null && !isBedHead(cached)) {
+            npc.setCachedBedPos(null);
+        }
         long time = npc.level().getGameTime();
-        if (time - lastScanGameTime < 100L && cached != null) {
-            return cached;
+        if (time - lastScanGameTime < 100L && npc.getCachedBedPos() != null) {
+            return npc.getCachedBedPos();
         }
         lastScanGameTime = time;
         BlockPos found = findBedNearHome();
@@ -152,10 +168,10 @@ public class SleepGoal extends Goal {
     private BlockPos findBedNearHome() {
         BlockPos home = npc.getHomePos();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        // Compact scan: house interiors are small; avoid huge O(n^3) every canUse.
-        for (int dy = 0; dy <= 4; dy++) {
-            for (int dx = -4; dx <= 4; dx++) {
-                for (int dz = -4; dz <= 4; dz++) {
+        // House interiors are compact; scan a bit wider than before so rotated layouts still match.
+        for (int dy = -1; dy <= 5; dy++) {
+            for (int dx = -6; dx <= 6; dx++) {
+                for (int dz = -6; dz <= 6; dz++) {
                     cursor.set(home.getX() + dx, home.getY() + dy, home.getZ() + dz);
                     if (isBedHead(cursor)) {
                         return cursor.immutable();
@@ -163,6 +179,7 @@ public class SleepGoal extends Goal {
                 }
             }
         }
-        return home;
+        // Never fall back to home — that made NPCs "sleep" on floor blocks and glitch beds.
+        return null;
     }
 }

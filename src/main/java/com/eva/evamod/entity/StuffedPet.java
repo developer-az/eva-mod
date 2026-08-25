@@ -4,6 +4,8 @@ import com.eva.evamod.command.EvaModCommands;
 import com.eva.evamod.command.SettlementLocator;
 import com.eva.evamod.entity.ai.PetFollowOwnerGoal;
 import com.eva.evamod.entity.ai.PetSitGoal;
+import com.eva.evamod.net.OpenPetMenuPayload;
+import com.eva.evamod.net.PetMenuActionPayload;
 import com.eva.evamod.pet.PetKind;
 import com.eva.evamod.player.PlayerEvaData;
 import com.eva.evamod.registry.ModAttachments;
@@ -49,6 +51,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Cozy immortal stuffed-animal companion. Follows, sits, carries one trinket,
@@ -338,24 +341,97 @@ public class StuffedPet extends TamableAnimal {
             }
         }
 
-        // Empty hand: toggle sit / follow tip
+        // Empty hand: open utility menu (NPC-like dialogue UX)
         if (stack.isEmpty()) {
-            boolean sit = !this.isOrderedToSit();
-            this.setOrderedToSit(sit);
-            this.jumping = false;
-            this.getNavigation().stop();
-            this.setBubbleText(sit ? "sit" : "ok!");
-            serverPlayer.sendSystemMessage(Component.literal(sit
-                            ? this.getName().getString() + " sits quietly."
-                            : this.getName().getString() + " follows you again.")
-                    .withStyle(ChatFormatting.AQUA));
+            this.openMenu(serverPlayer);
             return InteractionResult.SUCCESS_SERVER.withoutItem();
         }
 
         serverPlayer.sendSystemMessage(Component.literal(
-                        "Empty hand: sit/follow · Dye: ribbon · Treats: hearts · Glow Berry: glow · Sneak+item: carry trinket")
+                        "Empty hand: pet menu · Dye: ribbon · Treats: hearts · Glow Berry: glow · Sneak+item: carry trinket")
                 .withStyle(ChatFormatting.GRAY));
         return InteractionResult.SUCCESS_SERVER.withoutItem();
+    }
+
+    public void openMenu(ServerPlayer player) {
+        String line = pickMenuLine();
+        this.getLookControl().setLookAt(player);
+        PacketDistributor.sendToPlayer(player, new OpenPetMenuPayload(
+                this.getId(),
+                this.getName().getString(),
+                "Stuffed " + this.getKind().getDisplayName(),
+                line,
+                this.isOrderedToSit(),
+                this.isGlowUtility(),
+                !carried.isEmpty()));
+    }
+
+    public void handleMenuAction(ServerPlayer player, int action) {
+        switch (action) {
+            case PetMenuActionPayload.ACTION_SIT_FOLLOW -> {
+                boolean sit = !this.isOrderedToSit();
+                this.setOrderedToSit(sit);
+                this.jumping = false;
+                this.getNavigation().stop();
+                this.setBubbleText(sit ? "sit" : "ok!");
+                this.openMenu(player);
+            }
+            case PetMenuActionPayload.ACTION_GLOW -> {
+                this.toggleGlow(player);
+                this.openMenu(player);
+            }
+            case PetMenuActionPayload.ACTION_FIND -> {
+                this.findSettlementHint(player);
+                this.openMenu(player);
+            }
+            case PetMenuActionPayload.ACTION_CHEER -> this.cheer(player);
+            case PetMenuActionPayload.ACTION_TRINKET_HINT -> {
+                if (!carried.isEmpty()) {
+                    player.sendSystemMessage(Component.literal("Carrying ")
+                            .withStyle(ChatFormatting.GREEN)
+                            .append(carried.getHoverName())
+                            .append(Component.literal(" — sneak+empty hand to take it back.")
+                                    .withStyle(ChatFormatting.GRAY)));
+                    this.setBubbleText("got it");
+                } else {
+                    player.sendSystemMessage(Component.literal(
+                                    "Sneak + hold an item to let your pet carry one trinket. Sneak + empty hand retrieves it.")
+                            .withStyle(ChatFormatting.AQUA));
+                    this.setBubbleText("?");
+                }
+                this.openMenu(player);
+            }
+            default -> this.openMenu(player);
+        }
+    }
+
+    public void cheer(ServerPlayer player) {
+        this.setBubbleText("yay!");
+        this.playSound(this.getKind().ambientSound(), 0.8F, this.getKind().getVoicePitch());
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.HEART,
+                    this.getX(), this.getEyeY() + 0.35, this.getZ(), 6, 0.3, 0.25, 0.3, 0.0);
+            serverLevel.sendParticles(ParticleTypes.NOTE,
+                    player.getX(), player.getEyeY() + 0.3, player.getZ(), 3, 0.3, 0.2, 0.3, 0.0);
+        }
+        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 20 * 8, 0, false, true));
+        player.sendSystemMessage(Component.literal(this.getName().getString() + " cheers you up. Soft hearts all around.")
+                .withStyle(ChatFormatting.LIGHT_PURPLE));
+        this.openMenu(player);
+    }
+
+    private String pickMenuLine() {
+        String[] lines = switch (this.getKind()) {
+            case TEDDY -> new String[]{"Warm hugs available.", "I'm squishy on purpose.", "Hold me / hold the fort."};
+            case BUNNY -> new String[]{"Hop goals: snacks & safety.", "Cotton-powered curiosity!", "Ears up for adventure."};
+            case FOX -> new String[]{"Sneaky soft. Helpful softer.", "I know a shortcut… maybe.", "Pepper-bright and loyal."};
+            case CAT -> new String[]{"Purr protocol engaged.", "I choose you. Casually.", "Nap? Explore? Both."};
+            case DRAGON -> new String[]{"Tiny roar. Huge heart.", "Treasure: you.", "Wings optional. Courage not."};
+            case OWL -> new String[]{"Wise enough to snuggle.", "Night eyes, day friend.", "Hoot means hello."};
+            case FROG -> new String[]{"Ribbit = ready.", "Pond philosopher on duty.", "Bounce toward the good."};
+            case SHEEP -> new String[]{"Cloud energy only.", "Fluff first, questions later.", "Woolly morale support."};
+        };
+        return lines[this.random.nextInt(lines.length)];
     }
 
     public void toggleGlow(ServerPlayer player) {
@@ -545,17 +621,22 @@ public class StuffedPet extends TamableAnimal {
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.ALLAY_AMBIENT_WITHOUT_ITEM;
+        return this.getKind().ambientSound();
+    }
+
+    @Override
+    public float getVoicePitch() {
+        return this.getKind().getVoicePitch();
     }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        return SoundEvents.ALLAY_HURT;
+        return this.getKind().hurtSound();
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ALLAY_DEATH;
+        return this.getKind().deathSound();
     }
 
     @Override

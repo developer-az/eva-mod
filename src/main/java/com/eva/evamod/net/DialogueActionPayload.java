@@ -12,6 +12,10 @@ public record DialogueActionPayload(int entityId, int action) implements CustomP
     public static final int ACTION_TRADE = 1;
     public static final int ACTION_ERRAND = 2;
     public static final int ACTION_TIP = 3;
+    public static final int ACTION_ASK_DAY = 4;
+    public static final int ACTION_COMPLIMENT = 5;
+    public static final int ACTION_TOUR = 6;
+    public static final int ACTION_STORY = 7;
 
     public static final Type<DialogueActionPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(EvaMod.MODID, "dialogue_action"));

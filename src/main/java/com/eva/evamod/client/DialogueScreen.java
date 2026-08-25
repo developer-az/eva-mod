@@ -13,14 +13,13 @@ import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
- * Soft dialogue panel with hearts, birthday, and Help (errand) / Tip button.
- * Text colors must be ARGB (full alpha) on 26.2+.
+ * Soft dialogue panel with a scalable action grid (Talk/Trade/Help + personality verbs).
  */
 public class DialogueScreen extends Screen {
-    private static final int PANEL_WIDTH = 300;
-    private static final int PANEL_HEIGHT = 168;
+    private static final int PANEL_WIDTH = 320;
+    private static final int PANEL_HEIGHT = 196;
     private static final int TEXT_TOP = 48;
-    private static final int TEXT_BOTTOM_PAD = 36;
+    private static final int TEXT_BOTTOM_PAD = 58;
     private static final int LINE_HEIGHT = 9;
 
     private final int entityId;
@@ -44,6 +43,8 @@ public class DialogueScreen extends Screen {
 
     public void updateFrom(OpenDialoguePayload payload) {
         applyPayload(payload);
+        this.clearWidgets();
+        this.init();
     }
 
     private void applyPayload(OpenDialoguePayload payload) {
@@ -60,26 +61,32 @@ public class DialogueScreen extends Screen {
     protected void init() {
         int panelLeft = (this.width - PANEL_WIDTH) / 2;
         int panelTop = (this.height - PANEL_HEIGHT) / 2;
-        int buttonY = panelTop + PANEL_HEIGHT - 28;
-        int buttonWidth = 68;
+        int row1 = panelTop + PANEL_HEIGHT - 50;
+        int row2 = panelTop + PANEL_HEIGHT - 26;
+        int buttonWidth = 72;
         int gap = (PANEL_WIDTH - buttonWidth * 4) / 5;
 
-        this.addRenderableWidget(Button.builder(Component.literal("Talk"), button ->
-                        ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, DialogueActionPayload.ACTION_TALK)))
-                .bounds(panelLeft + gap, buttonY, buttonWidth, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Trade"), button ->
-                        ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, DialogueActionPayload.ACTION_TRADE)))
-                .bounds(panelLeft + gap * 2 + buttonWidth, buttonY, buttonWidth, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal(canErrand ? "Help" : "Tip"), button ->
-                        ClientPacketDistributor.sendToServer(new DialogueActionPayload(
-                                entityId,
-                                canErrand ? DialogueActionPayload.ACTION_ERRAND : DialogueActionPayload.ACTION_TIP)))
-                .bounds(panelLeft + gap * 3 + buttonWidth * 2, buttonY, buttonWidth, 20).build());
-
+        addAction(panelLeft + gap, row1, buttonWidth, "Talk", DialogueActionPayload.ACTION_TALK);
+        addAction(panelLeft + gap * 2 + buttonWidth, row1, buttonWidth, "Trade", DialogueActionPayload.ACTION_TRADE);
+        addAction(panelLeft + gap * 3 + buttonWidth * 2, row1, buttonWidth,
+                canErrand ? "Help" : "Tip",
+                canErrand ? DialogueActionPayload.ACTION_ERRAND : DialogueActionPayload.ACTION_TIP);
         this.addRenderableWidget(Button.builder(Component.literal("Bye"), button -> this.onClose())
-                .bounds(panelLeft + gap * 4 + buttonWidth * 3, buttonY, buttonWidth, 20).build());
+                .bounds(panelLeft + gap * 4 + buttonWidth * 3, row1, buttonWidth, 20).build());
+
+        addAction(panelLeft + gap, row2, buttonWidth, "Ask Day", DialogueActionPayload.ACTION_ASK_DAY);
+        addAction(panelLeft + gap * 2 + buttonWidth, row2, buttonWidth, "Compliment",
+                DialogueActionPayload.ACTION_COMPLIMENT);
+        addAction(panelLeft + gap * 3 + buttonWidth * 2, row2, buttonWidth, "Tour",
+                DialogueActionPayload.ACTION_TOUR);
+        addAction(panelLeft + gap * 4 + buttonWidth * 3, row2, buttonWidth, "Story",
+                DialogueActionPayload.ACTION_STORY);
+    }
+
+    private void addAction(int x, int y, int w, String label, int action) {
+        this.addRenderableWidget(Button.builder(Component.literal(label), button ->
+                        ClientPacketDistributor.sendToServer(new DialogueActionPayload(entityId, action)))
+                .bounds(x, y, w, 20).build());
     }
 
     @Override

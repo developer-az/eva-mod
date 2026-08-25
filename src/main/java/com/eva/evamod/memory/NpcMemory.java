@@ -29,6 +29,7 @@ public class NpcMemory {
         public long lastHitDay = -1;
         public long lastSeenDay = -1;
         public long lastGiftDay = -1;
+        public long lastComplimentDay = -1;
 
         public boolean isStranger() {
             return firstMetDay < 0;
@@ -62,6 +63,7 @@ public class NpcMemory {
             output.putLong("LastHitDay", lastHitDay);
             output.putLong("LastSeenDay", lastSeenDay);
             output.putLong("LastGiftDay", lastGiftDay);
+            output.putLong("LastComplimentDay", lastComplimentDay);
         }
 
         static Record load(ValueInput input) {
@@ -77,6 +79,7 @@ public class NpcMemory {
             record.lastHitDay = input.getLongOr("LastHitDay", -1L);
             record.lastSeenDay = input.getLongOr("LastSeenDay", -1L);
             record.lastGiftDay = input.getLongOr("LastGiftDay", -1L);
+            record.lastComplimentDay = input.getLongOr("LastComplimentDay", -1L);
             return record;
         }
     }
